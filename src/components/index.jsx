@@ -1,9 +1,7 @@
-// ─── CarteVisuelle.jsx ───────────────────────────────────────
+// ─── CarteVisuelle.jsx (version vitrine, pas de QR) ──────────
 import { motion } from 'framer-motion';
 
-export function CarteVisuelle({ ville = 'Sanary-sur-Mer', numero = 'SAN · 008431', expiration = '09/2026', qrToken = null }) {
-  const qrUrl = qrToken ? `https://carte-resident.fr/scan?token=${qrToken}` : null;
-
+export function CarteVisuelle({ ville = 'Sanary-sur-Mer', numero = 'SAN · 008431', expiration = '09/2026' }) {
   return (
     <div className="perspective-1000 w-[300px] sm:w-[320px] h-[190px] sm:h-[200px] mx-auto">
       <motion.div
@@ -16,24 +14,7 @@ export function CarteVisuelle({ ville = 'Sanary-sur-Mer', numero = 'SAN · 00843
             <div className="font-serif text-lg sm:text-xl font-bold tracking-wider">Carte Résident</div>
             <div className="text-[10px] sm:text-xs font-medium uppercase tracking-widest opacity-80 text-right max-w-[120px]">{ville}</div>
           </div>
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-8 sm:w-12 sm:h-9 rounded bg-gradient-to-br from-[#e8b86d] to-[#c8963e] shadow-inner" />
-            {qrUrl && (
-              <div className="w-8 h-8 sm:w-9 sm:h-9 bg-white rounded-md flex items-center justify-center">
-                <svg viewBox="0 0 21 21" className="w-6 h-6 text-bleu">
-                  <rect x="0" y="0" width="7" height="7" fill="currentColor" />
-                  <rect x="14" y="0" width="7" height="7" fill="currentColor" />
-                  <rect x="0" y="14" width="7" height="7" fill="currentColor" />
-                  <rect x="2" y="2" width="3" height="3" fill="white" />
-                  <rect x="16" y="2" width="3" height="3" fill="white" />
-                  <rect x="2" y="16" width="3" height="3" fill="white" />
-                  <rect x="9" y="9" width="3" height="3" fill="currentColor" />
-                  <rect x="14" y="14" width="7" height="7" fill="currentColor" />
-                  <rect x="16" y="16" width="3" height="3" fill="white" />
-                </svg>
-              </div>
-            )}
-          </div>
+          <div className="w-10 h-8 sm:w-12 sm:h-9 rounded bg-gradient-to-br from-[#e8b86d] to-[#c8963e] shadow-inner" />
           <div>
             <div className="font-mono text-base sm:text-lg tracking-[0.15em] sm:tracking-[0.2em] mb-2 text-white/90">{numero}</div>
             <div className="flex justify-between items-end">
@@ -49,6 +30,55 @@ export function CarteVisuelle({ ville = 'Sanary-sur-Mer', numero = 'SAN · 00843
           <div className="absolute inset-0 bg-gradient-to-tr from-white/0 via-white/5 to-white/0 pointer-events-none" />
         </div>
       </motion.div>
+    </div>
+  );
+}
+
+// ─── CarteDigitale (version complète avec QR code intégré) ───
+// Utilisée sur la page de confirmation — téléchargeable
+export function CarteDigitale({ ville, numero, expiration, prenom, nom, formule, qrToken }) {
+  const scanUrl = qrToken ? `${window.location.origin}/scan?token=${qrToken}` : null;
+  const qrImageUrl = scanUrl ? `https://api.qrserver.com/v1/create-qr-code/?size=200x200&color=1a3a5c&bgcolor=ffffff&data=${encodeURIComponent(scanUrl)}` : null;
+
+  return (
+    <div className="w-[340px] mx-auto">
+      <div className="rounded-2xl shadow-2xl overflow-hidden bg-gradient-to-br from-[#1a3a5c] to-[#0d2440] border border-white/10 text-white">
+        {/* Haut de la carte */}
+        <div className="p-6 pb-4">
+          <div className="flex justify-between items-start mb-6">
+            <div className="font-serif text-xl font-bold tracking-wider">Carte Résident</div>
+            <div className="text-[10px] font-medium uppercase tracking-widest opacity-80 text-right">{ville}</div>
+          </div>
+          <div className="flex items-center gap-3 mb-5">
+            <div className="w-12 h-9 rounded bg-gradient-to-br from-[#e8b86d] to-[#c8963e] shadow-inner" />
+            <div className="text-sm text-blue-200 capitalize">{formule}</div>
+          </div>
+          <div className="font-mono text-xl tracking-[0.18em] mb-1">{numero}</div>
+          <div className="text-sm text-blue-200">{prenom} {nom}</div>
+        </div>
+
+        {/* QR Code */}
+        {qrImageUrl && (
+          <div className="bg-white mx-4 mb-4 rounded-xl p-4 flex items-center gap-4">
+            <img src={qrImageUrl} alt="QR Code" className="w-24 h-24 rounded-lg" crossOrigin="anonymous" />
+            <div className="flex-1 min-w-0">
+              <div className="text-xs text-gray-400 uppercase tracking-wider font-bold mb-1">Scanner pour valider</div>
+              <p className="text-xs text-gray-500 leading-relaxed">Présentez ce QR code au commerçant pour enregistrer votre visite.</p>
+            </div>
+          </div>
+        )}
+
+        {/* Bas de la carte */}
+        <div className="px-6 pb-5 flex justify-between items-end">
+          <div className="text-[10px] uppercase tracking-wider text-white/60">
+            Valable jusqu'au<br />
+            <span className="text-sm text-white font-medium">{expiration}</span>
+          </div>
+          <div className="w-10 h-10 rounded-full border-2 border-white/20 flex items-center justify-center">
+            <div className="w-6 h-6 rounded-full bg-white/20" />
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
@@ -362,16 +392,17 @@ export function CartesCadeaux() {
           Faites découvrir les commerces de votre ville à un ami, un voisin ou un membre de votre famille en lui offrant une Carte Résident.
         </p>
         <div className="bg-white rounded-3xl p-8 md:p-10 border border-gray-100 shadow-sm max-w-xl mx-auto mb-10">
-          <div className="grid grid-cols-3 gap-6 mb-8">
+          <div className="grid grid-cols-3 gap-4 mb-8">
             {[
-              { formule: 'individuel', prix: '10€', label: '1 carte' },
-              { formule: 'couple', prix: '15€', label: '2 cartes' },
-              { formule: 'secondaire', prix: '20€', label: '1 carte' },
+              { formule: 'individuel', nom: 'Individuel', prix: '10€', label: '1 carte' },
+              { formule: 'couple', nom: 'Couple', prix: '15€', label: '2 cartes' },
+              { formule: 'secondaire', nom: 'Rés. secondaire', prix: '20€', label: '1 carte' },
             ].map((f) => (
               <RouterLink2 key={f.formule} to={`/inscription?formule=${f.formule}`}
-                className="rounded-2xl bg-gradient-to-br from-bleu to-bleu-clair p-5 flex flex-col items-center justify-center shadow-lg hover:-translate-y-1 transition-transform text-white">
+                className="rounded-2xl bg-gradient-to-br from-bleu to-bleu-clair p-4 sm:p-5 flex flex-col items-center justify-center shadow-lg hover:-translate-y-1 transition-transform text-white">
+                <div className="text-[10px] text-blue-200 uppercase tracking-widest mb-1">{f.nom}</div>
                 <div className="font-serif text-3xl font-bold">{f.prix}</div>
-                <div className="text-xs text-blue-200 uppercase tracking-widest mt-1">{f.label}</div>
+                <div className="text-xs text-blue-200 mt-1">{f.label}</div>
               </RouterLink2>
             ))}
           </div>
