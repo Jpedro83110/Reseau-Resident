@@ -399,8 +399,8 @@ export function CartesCadeaux() {
               { formule: 'secondaire', nom: 'Rés. secondaire', prix: '20€', label: '1 carte' },
             ].map((f) => (
               <RouterLink2 key={f.formule} to={`/inscription?formule=${f.formule}`}
-                className="rounded-2xl bg-gradient-to-br from-bleu to-bleu-clair p-4 sm:p-5 flex flex-col items-center justify-center shadow-lg hover:-translate-y-1 transition-transform text-white">
-                <div className="text-[10px] text-blue-200 uppercase tracking-widest mb-1">{f.nom}</div>
+                className="rounded-2xl bg-gradient-to-br from-bleu to-bleu-clair p-4 sm:p-5 flex flex-col items-center justify-center shadow-lg hover:-translate-y-1 transition-transform text-white min-h-[120px]">
+                <div className="text-xs text-white font-bold uppercase tracking-wider mb-2">{f.nom}</div>
                 <div className="font-serif text-3xl font-bold">{f.prix}</div>
                 <div className="text-xs text-blue-200 mt-1">{f.label}</div>
               </RouterLink2>

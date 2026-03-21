@@ -5,27 +5,24 @@ import { Check, CreditCard, ChevronRight, CheckCircle2, Phone, Smartphone, Credi
 import { Elements, PaymentElement, useStripe, useElements } from '@stripe/react-stripe-js';
 import { stripePromise, STRIPE_PRICES } from '../../lib/stripe';
 import { creerInscription, confirmerPaiement, getVilles } from '../../lib/api';
-import AutocompleteAdresse from '../../components/AutocompleteAdresse';
 import AutocompleteVille from '../../components/AutocompleteVille';
 import { CarteDigitale } from '../../components/index';
 
 const TARIFS = Object.entries(STRIPE_PRICES).map(([id, t]) => ({
   id, label: t.label, prix: t.montant / 100, cartes: t.cartes,
 }));
-
 const inputClass = "w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-or focus:ring-2 focus:ring-or/20 outline-none transition-all text-base";
 
-// ── ProgressBar ──────────────────────────────────────────────
 function ProgressBar({ step }) {
   const labels = ['Formule', 'Informations', 'Paiement', 'Confirmation'];
   return (
-    <div className="mb-12" aria-label={`Étape ${step} sur 4`}>
+    <div className="mb-12">
       <div className="flex justify-between relative">
         <div className="absolute top-5 left-0 w-full h-1 bg-gray-200 z-0" />
         <div className="absolute top-5 left-0 h-1 bg-or z-0 transition-all duration-500" style={{ width: `${((step - 1) / 3) * 100}%` }} />
-        {[1, 2, 3, 4].map((n) => (
-          <div key={n} className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm relative z-10 transition-colors duration-300 ${step >= n ? 'bg-or text-white shadow-md' : 'bg-white text-gray-400 border-2 border-gray-200'}`}>
-            {step > n ? <Check size={18} aria-hidden="true" /> : n}
+        {[1,2,3,4].map((n) => (
+          <div key={n} className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm relative z-10 transition-colors ${step >= n ? 'bg-or text-white shadow-md' : 'bg-white text-gray-400 border-2 border-gray-200'}`}>
+            {step > n ? <Check size={18} /> : n}
           </div>
         ))}
       </div>
@@ -36,7 +33,7 @@ function ProgressBar({ step }) {
   );
 }
 
-// ── Step 1: Formule ──────────────────────────────────────────
+// ── Step 1 ───────────────────────────────────────────────────
 function StepFormule({ formData, setFormData, onNext }) {
   return (
     <div className="p-8 md:p-12">
@@ -47,41 +44,69 @@ function StepFormule({ formData, setFormData, onNext }) {
             className={`text-left p-6 rounded-2xl border-2 transition-all ${formData.formule === t.id ? 'border-or bg-orange-50/50 shadow-md' : 'border-gray-100 hover:border-gray-300 bg-white'}`}>
             <div className="flex justify-between items-start mb-3">
               <h3 className="font-serif text-xl font-bold">{t.label}</h3>
-              {formData.formule === t.id && <CheckCircle2 size={22} className="text-or" aria-hidden="true" />}
+              {formData.formule === t.id && <CheckCircle2 size={22} className="text-or" />}
             </div>
             <div className="text-3xl font-bold text-bleu mb-1">{t.prix}€ <span className="text-sm text-gray-500 font-normal">/ an</span></div>
-            <p className="text-sm text-gray-500">{t.cartes} carte{t.cartes > 1 ? 's' : ''} physique{t.cartes > 1 ? 's' : ''} ou digitale{t.cartes > 1 ? 's' : ''}</p>
+            <p className="text-sm text-gray-500">{t.cartes} carte{t.cartes > 1 ? 's' : ''}</p>
           </button>
         ))}
       </div>
       <div className="flex justify-end">
         <button onClick={onNext} className="px-8 py-4 bg-bleu hover:bg-bleu-clair text-white font-bold rounded-xl transition-colors flex items-center gap-2">
-          Continuer <ChevronRight size={20} aria-hidden="true" />
+          Continuer <ChevronRight size={20} />
         </button>
       </div>
     </div>
   );
 }
 
-// ── Step 2: Informations ─────────────────────────────────────
+// ── Step 2 ───────────────────────────────────────────────────
 function StepInfos({ formData, setFormData, onNext, onPrev, villesActives }) {
+  const isCouple = formData.formule === 'couple';
   const handleField = (name, value) => setFormData((p) => ({ ...p, [name]: value }));
-  const canNext = formData.prenom && formData.nom && formData.email && formData.ville && formData.rgpd && (formData.retraitCommerce || formData.adresse || formData.typeCarte === 'digitale');
+
+  const canNext = formData.prenom && formData.nom && formData.email && formData.ville && formData.rgpd
+    && (!isCouple || (formData.prenom2 && formData.nom2));
 
   return (
     <div className="p-8 md:p-12">
       <h2 className="font-serif text-3xl font-bold text-texte mb-8">Vos informations</h2>
       <div className="space-y-6 mb-10">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div>
-            <label htmlFor="prenom" className="block text-sm font-bold text-gray-700 mb-2">Prénom *</label>
-            <input id="prenom" type="text" value={formData.prenom} onChange={(e) => handleField('prenom', e.target.value)} placeholder="Marie" required className={inputClass} />
-          </div>
-          <div>
-            <label htmlFor="nom" className="block text-sm font-bold text-gray-700 mb-2">Nom *</label>
-            <input id="nom" type="text" value={formData.nom} onChange={(e) => handleField('nom', e.target.value)} placeholder="Dupont" required className={inputClass} />
+        {/* Titulaire principal */}
+        <div>
+          <h3 className="font-bold text-sm text-gray-400 uppercase tracking-wider mb-4">
+            {isCouple ? 'Titulaire 1' : 'Titulaire'}
+          </h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div>
+              <label htmlFor="prenom" className="block text-sm font-bold text-gray-700 mb-2">Prénom *</label>
+              <input id="prenom" type="text" value={formData.prenom} onChange={(e) => handleField('prenom', e.target.value)} placeholder="Marie" required className={inputClass} />
+            </div>
+            <div>
+              <label htmlFor="nom" className="block text-sm font-bold text-gray-700 mb-2">Nom *</label>
+              <input id="nom" type="text" value={formData.nom} onChange={(e) => handleField('nom', e.target.value)} placeholder="Dupont" required className={inputClass} />
+            </div>
           </div>
         </div>
+
+        {/* Titulaire 2 (couple) */}
+        {isCouple && (
+          <div className="pt-4 border-t border-gray-100">
+            <h3 className="font-bold text-sm text-gray-400 uppercase tracking-wider mb-4">Titulaire 2</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <label htmlFor="prenom2" className="block text-sm font-bold text-gray-700 mb-2">Prénom *</label>
+                <input id="prenom2" type="text" value={formData.prenom2} onChange={(e) => handleField('prenom2', e.target.value)} placeholder="Jean" required className={inputClass} />
+              </div>
+              <div>
+                <label htmlFor="nom2" className="block text-sm font-bold text-gray-700 mb-2">Nom *</label>
+                <input id="nom2" type="text" value={formData.nom2} onChange={(e) => handleField('nom2', e.target.value)} placeholder="Dupont" required className={inputClass} />
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Contact */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div>
             <label htmlFor="email" className="block text-sm font-bold text-gray-700 mb-2">Email *</label>
@@ -93,6 +118,7 @@ function StepInfos({ formData, setFormData, onNext, onPrev, villesActives }) {
           </div>
         </div>
 
+        {/* Ville */}
         <div>
           <AutocompleteVille id="ville" label="Ville de résidence (rattachée à votre carte)"
             value={formData.villeNom || ''} onChange={(val) => setFormData((p) => ({ ...p, villeNom: val }))}
@@ -107,12 +133,19 @@ function StepInfos({ formData, setFormData, onNext, onPrev, villesActives }) {
           )}
         </div>
 
+        {/* Justificatif de domicile */}
+        <div className="bg-blue-50 rounded-xl p-4 border border-blue-100">
+          <p className="text-sm text-bleu">
+            <strong>Justificatif de domicile</strong> — Pour valider votre inscription, un justificatif de domicile récent (facture, avis d'imposition) vous sera demandé par email après la commande. Cela permet de garantir que la carte est bien utilisée par les résidents de la ville.
+          </p>
+        </div>
+
         {/* Type de carte */}
         <div className="pt-4 border-t border-gray-100">
           <h3 className="font-bold text-lg mb-4">Type de carte</h3>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             {[
-              { value: 'physique', label: 'Carte physique', desc: 'Dans votre portefeuille', icon: <CardIcon size={20} /> },
+              { value: 'physique', label: 'Carte physique', desc: 'Retrait en commerce', icon: <CardIcon size={20} /> },
               { value: 'digitale', label: 'Carte digitale', desc: 'QR code sur téléphone', icon: <Smartphone size={20} /> },
               { value: 'les_deux', label: 'Les deux', desc: 'Physique + QR code', icon: <Check size={20} /> },
             ].map((opt) => (
@@ -126,35 +159,10 @@ function StepInfos({ formData, setFormData, onNext, onPrev, villesActives }) {
               </label>
             ))}
           </div>
+          {formData.typeCarte !== 'digitale' && (
+            <p className="text-sm text-gray-500 mt-3">La carte physique est à retirer chez un commerçant partenaire de votre ville.</p>
+          )}
         </div>
-
-        {/* Livraison */}
-        {formData.typeCarte !== 'digitale' && (
-          <div className="pt-4 border-t border-gray-100">
-            <h3 className="font-bold text-lg mb-4">Livraison de votre carte physique</h3>
-            <div className="space-y-3">
-              {[
-                { value: false, label: 'Envoi par courrier postal (gratuit)', desc: 'Sous 5 jours ouvrés.' },
-                { value: true, label: 'Retrait chez un commerçant partenaire', desc: 'Immédiatement.' },
-              ].map((opt) => (
-                <label key={String(opt.value)}
-                  className={`flex items-start gap-3 p-4 rounded-xl border cursor-pointer transition-colors ${formData.retraitCommerce === opt.value ? 'border-or bg-orange-50/30' : 'border-gray-200 hover:border-gray-300'}`}>
-                  <input type="radio" name="retrait" checked={formData.retraitCommerce === opt.value}
-                    onChange={() => setFormData((p) => ({ ...p, retraitCommerce: opt.value }))} className="mt-1 w-4 h-4 accent-or" />
-                  <div><div className="font-bold">{opt.label}</div><div className="text-sm text-gray-500 mt-0.5">{opt.desc}</div></div>
-                </label>
-              ))}
-            </div>
-            {!formData.retraitCommerce && (
-              <div className="mt-4">
-                <AutocompleteAdresse id="adresse" label="Adresse postale" value={formData.adresse}
-                  onChange={(val) => setFormData((p) => ({ ...p, adresse: val }))}
-                  onSelect={(a) => setFormData((p) => ({ ...p, adresse: a.label }))}
-                  placeholder="Commencez à taper votre adresse..." required />
-              </div>
-            )}
-          </div>
-        )}
 
         {/* RGPD */}
         <label className="flex items-start gap-3 cursor-pointer">
@@ -163,6 +171,7 @@ function StepInfos({ formData, setFormData, onNext, onPrev, villesActives }) {
           <span className="text-sm text-gray-600">
             J'accepte les <Link to="/cgv" className="underline text-bleu">Conditions Générales</Link> et la{' '}
             <Link to="/confidentialite" className="underline text-bleu">politique de confidentialité</Link>.
+            Je certifie résider dans la ville sélectionnée et j'accepte de fournir un justificatif de domicile.
           </span>
         </label>
       </div>
@@ -171,7 +180,7 @@ function StepInfos({ formData, setFormData, onNext, onPrev, villesActives }) {
         <button onClick={onPrev} className="px-6 py-4 text-gray-500 font-bold hover:text-texte transition-colors">Retour</button>
         <button onClick={onNext} disabled={!canNext}
           className="px-8 py-4 bg-bleu hover:bg-bleu-clair disabled:bg-gray-300 disabled:cursor-not-allowed text-white font-bold rounded-xl transition-colors flex items-center gap-2">
-          Continuer <ChevronRight size={20} aria-hidden="true" />
+          Continuer <ChevronRight size={20} />
         </button>
       </div>
     </div>
@@ -194,7 +203,7 @@ function StripeForm({ formData, carteId, onSuccess, onPrev }) {
     if (paymentIntent?.status === 'succeeded') {
       try {
         await confirmerPaiement(carteId, paymentIntent.id);
-        // Envoyer l'email de confirmation (non-bloquant — on ne fait pas échouer le flux si l'email rate)
+        // Email non-bloquant
         fetch('/api/send-confirmation-email', {
           method: 'POST', headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -202,10 +211,9 @@ function StripeForm({ formData, carteId, onSuccess, onPrev }) {
             ville: formData.villeNom, formule: formData.formule,
             qrToken: formData.qrToken, typeCarte: formData.typeCarte,
           }),
-        }).catch(() => {}); // Silencieux si l'email échoue
+        }).catch(() => {});
         onSuccess();
-      }
-      catch { setError('Erreur de confirmation. Contactez-nous.'); }
+      } catch { setError('Erreur de confirmation. Contactez-nous.'); }
     }
     setLoading(false);
   }
@@ -243,15 +251,17 @@ function StepPaiement({ formData, setFormData, onSuccess, onPrev }) {
       try {
         const carte = await creerInscription({
           formule: fd.formule, ville_slug: fd.ville, prenom: fd.prenom, nom: fd.nom,
-          email: fd.email, telephone: fd.telephone, adresse: fd.adresse,
-          retrait_commerce: fd.retraitCommerce, type_carte: fd.typeCarte,
+          email: fd.email, telephone: fd.telephone, adresse: null,
+          retrait_commerce: true, type_carte: fd.typeCarte,
         });
         if (cancelled) return;
         setCarteId(carte.id);
         setFormData((p) => ({ ...p, numeroCarte: carte.numero, qrToken: carte.qr_token }));
+
+        // Le serveur détermine le montant à partir de la formule — sécurisé
         const res = await fetch('/api/create-payment-intent', {
           method: 'POST', headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ montant: tarif.montant, email: fd.email, carte_id: carte.id, description: tarif.label }),
+          body: JSON.stringify({ formule: fd.formule, email: fd.email, carte_id: carte.id }),
         });
         if (!res.ok) { const err = await res.json().catch(() => ({})); throw new Error(err.error || 'Impossible de créer le paiement'); }
         const { clientSecret: cs } = await res.json();
@@ -271,8 +281,7 @@ function StepPaiement({ formData, setFormData, onSuccess, onPrev }) {
           <div className="bg-gray-50 rounded-2xl p-6 border border-gray-100">
             <h3 className="font-bold text-lg mb-4">Récapitulatif</h3>
             <div className="flex justify-between mb-2 text-sm"><span className="text-gray-600">{tarif?.label}</span><span className="font-bold">{(tarif?.montant ?? 0) / 100}€</span></div>
-            <div className="flex justify-between text-sm pb-4 mb-4 border-b border-gray-200"><span className="text-gray-600">Livraison</span><span className="font-bold text-vert">Offerte</span></div>
-            <div className="flex justify-between text-lg"><span className="font-bold">Total</span><span className="font-bold text-bleu">{(tarif?.montant ?? 0) / 100}€</span></div>
+            <div className="flex justify-between text-lg pt-4 border-t border-gray-200"><span className="font-bold">Total</span><span className="font-bold text-bleu">{(tarif?.montant ?? 0) / 100}€</span></div>
           </div>
           <div className="mt-4 bg-blue-50 rounded-2xl p-5 border border-blue-100 text-sm text-bleu">
             <div className="flex items-center gap-2 font-bold mb-2"><Phone size={16} /> Par chèque</div>
@@ -295,7 +304,7 @@ function StepPaiement({ formData, setFormData, onSuccess, onPrev }) {
   );
 }
 
-// ── Step 4: Confirmation avec la vraie carte digitale ────────
+// ── Step 4 ───────────────────────────────────────────────────
 function StepConfirmation({ formData }) {
   const isDigital = formData.typeCarte === 'digitale' || formData.typeCarte === 'les_deux';
   const expDate = new Date();
@@ -305,40 +314,33 @@ function StepConfirmation({ formData }) {
   return (
     <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="p-8 md:p-16 text-center">
       <div className="w-24 h-24 rounded-full bg-green-100 text-vert flex items-center justify-center mx-auto mb-8">
-        <Check size={48} strokeWidth={3} aria-hidden="true" />
+        <Check size={48} strokeWidth={3} />
       </div>
       <h2 className="font-serif text-4xl font-bold text-texte mb-4">Félicitations {formData.prenom} !</h2>
       <p className="text-xl text-gray-600 mb-10 max-w-lg mx-auto">
         Votre Carte Résident a bien été créée. Un email de confirmation avec votre carte a été envoyé à <strong>{formData.email}</strong>.
-        {formData.typeCarte !== 'digitale' && ' Votre carte physique sera envoyée sous 5 jours.'}
+        {formData.typeCarte !== 'digitale' && ' Récupérez votre carte physique chez un commerçant partenaire.'}
       </p>
 
-      {/* La vraie carte digitale avec QR code intégré */}
       {formData.numeroCarte && (
         <div className="mb-8">
-          <CarteDigitale
-            ville={formData.villeNom || 'Ma ville'}
-            numero={formData.numeroCarte}
-            expiration={expStr}
-            prenom={formData.prenom}
-            nom={formData.nom}
-            formule={formData.formule}
-            qrToken={isDigital ? formData.qrToken : null}
-          />
+          <CarteDigitale ville={formData.villeNom || 'Ma ville'} numero={formData.numeroCarte}
+            expiration={expStr} prenom={formData.prenom} nom={formData.nom}
+            formule={formData.formule} qrToken={isDigital ? formData.qrToken : null} />
         </div>
       )}
 
       {isDigital && (
         <p className="text-sm text-gray-500 mb-6 max-w-md mx-auto">
-          Faites une capture d'écran de cette carte ou téléchargez le QR code ci-dessous pour le montrer aux commerçants partenaires.
+          Faites une capture d'écran de cette carte pour la montrer aux commerçants partenaires.
         </p>
       )}
 
-      {!isDigital && formData.numeroCarte && (
-        <p className="text-sm text-gray-500 mb-6">
-          Conservez votre numéro de carte <strong>{formData.numeroCarte}</strong> en attendant de recevoir votre carte physique.
+      <div className="bg-orange-50 rounded-xl p-4 max-w-md mx-auto mb-8 border border-orange-100">
+        <p className="text-sm text-orange-800">
+          <strong>Prochaine étape :</strong> vous recevrez un email vous demandant un justificatif de domicile pour valider définitivement votre carte.
         </p>
-      )}
+      </div>
 
       <Link to={formData.ville ? `/villes/${formData.ville}` : '/'}
         className="inline-flex items-center justify-center px-8 py-4 text-lg font-bold rounded-xl text-white bg-bleu hover:bg-bleu-clair transition-colors shadow-lg">
@@ -355,11 +357,12 @@ export default function Inscription() {
   const [villesActives, setVillesActives] = useState([]);
   const [formData, setFormData] = useState({
     formule: searchParams.get('formule') || 'individuel',
-    ville: searchParams.get('ville') || '',
-    villeNom: '',
+    ville: searchParams.get('ville') || '', villeNom: '',
     typeCarte: 'physique',
-    prenom: '', nom: '', email: '', telephone: '', adresse: '',
-    retraitCommerce: false, rgpd: false, numeroCarte: null, qrToken: null,
+    prenom: '', nom: '', prenom2: '', nom2: '',
+    email: '', telephone: '',
+    retraitCommerce: true, rgpd: false,
+    numeroCarte: null, qrToken: null,
   });
 
   useEffect(() => {
