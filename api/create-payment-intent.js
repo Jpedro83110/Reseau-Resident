@@ -1,6 +1,6 @@
 // Force Node.js runtime (not Edge)
 export const config = {
-  runtime: 'nodejs20.x',
+  runtime: 'nodejs20',
 };
 
 export default async function handler(req, res) {
