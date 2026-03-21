@@ -4,8 +4,8 @@ import { MapPin, Store, Users, Mail } from 'lucide-react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { CommercantCard } from '../../components/index.jsx';
 import { useVille, useStatsMensuelles } from '../../hooks/useData';
-import { inscrireListeAttente } from '../../lib/api';
-import { useState } from 'react';
+import { inscrireListeAttente, getOffresVille, getEvenementsVille } from '../../lib/api';
+import { useState, useEffect } from 'react';
 
 // ── Page ville introuvable ────────────────────────────────────
 function VilleIntrouvable() {
@@ -94,8 +94,18 @@ function VilleActive({ ville }) {
   const progress = Math.min(((ville.cartes_actives ?? 0) / 500) * 100, 100);
   const commerces = (ville.commerces ?? []).filter(c => c.actif);
   const [filtre, setFiltre] = useState('tous');
+  const [offres, setOffres] = useState([]);
+  const [evenements, setEvenements] = useState([]);
 
-  // Extraire les catégories uniques
+  // Load offres & events
+  useEffect(() => {
+    if (!ville.id) return;
+    let c = false;
+    getOffresVille(ville.id).then((d) => { if (!c) setOffres(d); }).catch(() => {});
+    getEvenementsVille(ville.id).then((d) => { if (!c) setEvenements(d); }).catch(() => {});
+    return () => { c = true; };
+  }, [ville.id]);
+
   const categories = [...new Set(commerces.map(c => c.categorie))].sort();
   const commercesFiltres = filtre === 'tous' ? commerces : commerces.filter(c => c.categorie === filtre);
 
@@ -213,6 +223,48 @@ function VilleActive({ ville }) {
                 </ResponsiveContainer>
               </div>
               <p className="text-center text-sm text-gray-500 mt-4 italic">Évolution des visites générées par la Carte Résident</p>
+            </div>
+          )}
+
+          {/* Offres dynamiques */}
+          {offres.length > 0 && (
+            <div className="bg-white rounded-3xl p-8 shadow-sm border border-gray-100 mb-16">
+              <h3 className="font-serif text-2xl font-bold text-texte mb-6">Offres du moment</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {offres.map((o) => (
+                  <div key={o.id} className="rounded-2xl p-5 border border-or/20 bg-orange-50/30">
+                    <div className="flex justify-between items-start mb-2">
+                      <div className="font-bold text-texte">{o.titre}</div>
+                      <span className="px-2 py-0.5 bg-or/10 text-or text-xs font-bold rounded-full capitalize">{o.type}</span>
+                    </div>
+                    {o.description && <p className="text-sm text-gray-600 mb-2">{o.description}</p>}
+                    <p className="text-xs text-gray-400">Chez {o.commerces?.nom}</p>
+                    {o.date_fin && <p className="text-xs text-gray-400">Jusqu'au {new Date(o.date_fin).toLocaleDateString('fr-FR')}</p>}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Événements locaux */}
+          {evenements.length > 0 && (
+            <div className="bg-white rounded-3xl p-8 shadow-sm border border-gray-100 mb-16">
+              <h3 className="font-serif text-2xl font-bold text-texte mb-6">Événements à venir</h3>
+              <div className="space-y-4">
+                {evenements.map((ev) => (
+                  <div key={ev.id} className="flex items-start gap-4 p-4 rounded-2xl bg-blue-50/50 border border-blue-100">
+                    <div className="bg-bleu text-white rounded-xl p-3 text-center min-w-[60px]">
+                      <div className="text-2xl font-bold">{new Date(ev.date_debut).getDate()}</div>
+                      <div className="text-[10px] uppercase">{new Date(ev.date_debut).toLocaleDateString('fr-FR', { month: 'short' })}</div>
+                    </div>
+                    <div>
+                      <div className="font-bold text-texte">{ev.titre}</div>
+                      {ev.description && <p className="text-sm text-gray-600 mt-1">{ev.description}</p>}
+                      {ev.lieu && <p className="text-xs text-gray-400 mt-1">📍 {ev.lieu}</p>}
+                    </div>
+                  </div>
+                ))}
+              </div>
             </div>
           )}
 

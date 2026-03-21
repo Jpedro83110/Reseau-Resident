@@ -35,15 +35,23 @@ export function CarteVisuelle({ ville = 'Sanary-sur-Mer', numero = 'SAN · 00843
 }
 
 // ─── CarteDigitale (version complète avec QR code intégré) ───
-// Utilisée sur la page de confirmation — téléchargeable
+import { useState as useStateQR, useEffect as useEffectQR } from 'react';
+
 export function CarteDigitale({ ville, numero, expiration, prenom, nom, formule, qrToken }) {
   const scanUrl = qrToken ? `${window.location.origin}/scan?token=${qrToken}` : null;
-  const qrImageUrl = scanUrl ? `https://api.qrserver.com/v1/create-qr-code/?size=200x200&color=1a3a5c&bgcolor=ffffff&data=${encodeURIComponent(scanUrl)}` : null;
+  const [qrDataUri, setQrDataUri] = useStateQR(null);
+
+  useEffectQR(() => {
+    if (!scanUrl) return;
+    import('qrcode').then((QRCode) => {
+      QRCode.toDataURL(scanUrl, { width: 200, margin: 2, color: { dark: '#1a3a5c', light: '#ffffff' } })
+        .then(setQrDataUri).catch(() => {});
+    }).catch(() => {});
+  }, [scanUrl]);
 
   return (
     <div className="w-[340px] mx-auto">
       <div className="rounded-2xl shadow-2xl overflow-hidden bg-gradient-to-br from-[#1a3a5c] to-[#0d2440] border border-white/10 text-white">
-        {/* Haut de la carte */}
         <div className="p-6 pb-4">
           <div className="flex justify-between items-start mb-6">
             <div className="font-serif text-xl font-bold tracking-wider">Carte Résident</div>
@@ -57,10 +65,9 @@ export function CarteDigitale({ ville, numero, expiration, prenom, nom, formule,
           <div className="text-sm text-blue-200">{prenom} {nom}</div>
         </div>
 
-        {/* QR Code */}
-        {qrImageUrl && (
+        {qrDataUri && (
           <div className="bg-white mx-4 mb-4 rounded-xl p-4 flex items-center gap-4">
-            <img src={qrImageUrl} alt="QR Code" className="w-24 h-24 rounded-lg" crossOrigin="anonymous" />
+            <img src={qrDataUri} alt="QR Code" className="w-24 h-24 rounded-lg" />
             <div className="flex-1 min-w-0">
               <div className="text-xs text-gray-400 uppercase tracking-wider font-bold mb-1">Scanner pour valider</div>
               <p className="text-xs text-gray-500 leading-relaxed">Présentez ce QR code au commerçant pour enregistrer votre visite.</p>
@@ -68,7 +75,6 @@ export function CarteDigitale({ ville, numero, expiration, prenom, nom, formule,
           </div>
         )}
 
-        {/* Bas de la carte */}
         <div className="px-6 pb-5 flex justify-between items-end">
           <div className="text-[10px] uppercase tracking-wider text-white/60">
             Valable jusqu'au<br />

@@ -4,13 +4,11 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Check, CreditCard, ChevronRight, CheckCircle2, Phone, Smartphone, CreditCard as CardIcon } from 'lucide-react';
 import { Elements, PaymentElement, useStripe, useElements } from '@stripe/react-stripe-js';
 import { stripePromise, STRIPE_PRICES } from '../../lib/stripe';
-import { creerInscription, confirmerPaiement, getVilles } from '../../lib/api';
+import { creerInscription, getVilles } from '../../lib/api';
 import AutocompleteVille from '../../components/AutocompleteVille';
 import { CarteDigitale } from '../../components/index';
 
-const TARIFS = Object.entries(STRIPE_PRICES).map(([id, t]) => ({
-  id, label: t.label, prix: t.montant / 100, cartes: t.cartes,
-}));
+const TARIFS = Object.entries(STRIPE_PRICES).map(([id, t]) => ({ id, label: t.label, prix: t.montant / 100, cartes: t.cartes }));
 const inputClass = "w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-or focus:ring-2 focus:ring-or/20 outline-none transition-all text-base";
 
 function ProgressBar({ step }) {
@@ -33,7 +31,6 @@ function ProgressBar({ step }) {
   );
 }
 
-// ── Step 1 ───────────────────────────────────────────────────
 function StepFormule({ formData, setFormData, onNext }) {
   return (
     <div className="p-8 md:p-12">
@@ -60,11 +57,9 @@ function StepFormule({ formData, setFormData, onNext }) {
   );
 }
 
-// ── Step 2 ───────────────────────────────────────────────────
 function StepInfos({ formData, setFormData, onNext, onPrev, villesActives }) {
   const isCouple = formData.formule === 'couple';
-  const handleField = (name, value) => setFormData((p) => ({ ...p, [name]: value }));
-
+  const h = (name, value) => setFormData((p) => ({ ...p, [name]: value }));
   const canNext = formData.prenom && formData.nom && formData.email && formData.ville && formData.rgpd
     && (!isCouple || (formData.prenom2 && formData.nom2));
 
@@ -72,123 +67,73 @@ function StepInfos({ formData, setFormData, onNext, onPrev, villesActives }) {
     <div className="p-8 md:p-12">
       <h2 className="font-serif text-3xl font-bold text-texte mb-8">Vos informations</h2>
       <div className="space-y-6 mb-10">
-        {/* Titulaire principal */}
         <div>
-          <h3 className="font-bold text-sm text-gray-400 uppercase tracking-wider mb-4">
-            {isCouple ? 'Titulaire 1' : 'Titulaire'}
-          </h3>
+          <h3 className="font-bold text-sm text-gray-400 uppercase tracking-wider mb-4">{isCouple ? 'Titulaire 1' : 'Titulaire'}</h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div>
-              <label htmlFor="prenom" className="block text-sm font-bold text-gray-700 mb-2">Prénom *</label>
-              <input id="prenom" type="text" value={formData.prenom} onChange={(e) => handleField('prenom', e.target.value)} placeholder="Marie" required className={inputClass} />
-            </div>
-            <div>
-              <label htmlFor="nom" className="block text-sm font-bold text-gray-700 mb-2">Nom *</label>
-              <input id="nom" type="text" value={formData.nom} onChange={(e) => handleField('nom', e.target.value)} placeholder="Dupont" required className={inputClass} />
-            </div>
+            <div><label className="block text-sm font-bold text-gray-700 mb-2">Prénom *</label>
+              <input type="text" value={formData.prenom} onChange={(e) => h('prenom', e.target.value)} placeholder="Marie" required className={inputClass} /></div>
+            <div><label className="block text-sm font-bold text-gray-700 mb-2">Nom *</label>
+              <input type="text" value={formData.nom} onChange={(e) => h('nom', e.target.value)} placeholder="Dupont" required className={inputClass} /></div>
           </div>
         </div>
-
-        {/* Titulaire 2 (couple) */}
         {isCouple && (
           <div className="pt-4 border-t border-gray-100">
             <h3 className="font-bold text-sm text-gray-400 uppercase tracking-wider mb-4">Titulaire 2</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div>
-                <label htmlFor="prenom2" className="block text-sm font-bold text-gray-700 mb-2">Prénom *</label>
-                <input id="prenom2" type="text" value={formData.prenom2} onChange={(e) => handleField('prenom2', e.target.value)} placeholder="Jean" required className={inputClass} />
-              </div>
-              <div>
-                <label htmlFor="nom2" className="block text-sm font-bold text-gray-700 mb-2">Nom *</label>
-                <input id="nom2" type="text" value={formData.nom2} onChange={(e) => handleField('nom2', e.target.value)} placeholder="Dupont" required className={inputClass} />
-              </div>
+              <div><label className="block text-sm font-bold text-gray-700 mb-2">Prénom *</label>
+                <input type="text" value={formData.prenom2} onChange={(e) => h('prenom2', e.target.value)} placeholder="Jean" required className={inputClass} /></div>
+              <div><label className="block text-sm font-bold text-gray-700 mb-2">Nom *</label>
+                <input type="text" value={formData.nom2} onChange={(e) => h('nom2', e.target.value)} placeholder="Dupont" required className={inputClass} /></div>
             </div>
           </div>
         )}
-
-        {/* Contact */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div>
-            <label htmlFor="email" className="block text-sm font-bold text-gray-700 mb-2">Email *</label>
-            <input id="email" type="email" value={formData.email} onChange={(e) => handleField('email', e.target.value)} placeholder="marie@exemple.fr" required className={inputClass} />
-          </div>
-          <div>
-            <label htmlFor="telephone" className="block text-sm font-bold text-gray-700 mb-2">Téléphone</label>
-            <input id="telephone" type="tel" value={formData.telephone} onChange={(e) => handleField('telephone', e.target.value)} placeholder="06 00 00 00 00" className={inputClass} />
-          </div>
+          <div><label className="block text-sm font-bold text-gray-700 mb-2">Email *</label>
+            <input type="email" value={formData.email} onChange={(e) => h('email', e.target.value)} placeholder="marie@exemple.fr" required className={inputClass} /></div>
+          <div><label className="block text-sm font-bold text-gray-700 mb-2">Téléphone</label>
+            <input type="tel" value={formData.telephone} onChange={(e) => h('telephone', e.target.value)} placeholder="06 00 00 00 00" className={inputClass} /></div>
         </div>
+        <AutocompleteVille id="ville" label="Ville de résidence (rattachée à votre carte)"
+          value={formData.villeNom || ''} onChange={(val) => setFormData((p) => ({ ...p, villeNom: val }))}
+          onSelect={(v) => { const m = villesActives.find((va) => va.nom.toLowerCase() === v.nom.toLowerCase()); if (m) setFormData((p) => ({ ...p, ville: m.slug, villeNom: m.nom })); else setFormData((p) => ({ ...p, ville: '', villeNom: v.nom })); }}
+          villesPartenaires={villesActives} placeholder="Tapez le nom de votre ville..." required />
+        {formData.villeNom && !formData.ville && <p className="text-sm text-orange-600 mt-2">Cette ville n'est pas encore active.</p>}
 
-        {/* Ville */}
-        <div>
-          <AutocompleteVille id="ville" label="Ville de résidence (rattachée à votre carte)"
-            value={formData.villeNom || ''} onChange={(val) => setFormData((p) => ({ ...p, villeNom: val }))}
-            onSelect={(v) => {
-              const match = villesActives.find((va) => va.nom.toLowerCase() === v.nom.toLowerCase());
-              if (match) setFormData((p) => ({ ...p, ville: match.slug, villeNom: match.nom }));
-              else setFormData((p) => ({ ...p, ville: '', villeNom: v.nom }));
-            }}
-            villesPartenaires={villesActives} placeholder="Tapez le nom de votre ville..." required />
-          {formData.villeNom && !formData.ville && (
-            <p className="text-sm text-orange-600 mt-2">Cette ville n'est pas encore active.</p>
-          )}
-        </div>
-
-        {/* Justificatif de domicile */}
         <div className="bg-blue-50 rounded-xl p-4 border border-blue-100">
-          <p className="text-sm text-bleu">
-            <strong>Justificatif de domicile</strong> — Pour valider votre inscription, un justificatif de domicile récent (facture, avis d'imposition) vous sera demandé par email après la commande. Cela permet de garantir que la carte est bien utilisée par les résidents de la ville.
-          </p>
+          <p className="text-sm text-bleu"><strong>Justificatif de domicile</strong> — Un justificatif récent vous sera demandé par email après la commande pour valider votre inscription.</p>
         </div>
 
-        {/* Type de carte */}
         <div className="pt-4 border-t border-gray-100">
           <h3 className="font-bold text-lg mb-4">Type de carte</h3>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-            {[
-              { value: 'physique', label: 'Carte physique', desc: 'Retrait en commerce', icon: <CardIcon size={20} /> },
+            {[{ value: 'physique', label: 'Carte physique', desc: 'Retrait en commerce', icon: <CardIcon size={20} /> },
               { value: 'digitale', label: 'Carte digitale', desc: 'QR code sur téléphone', icon: <Smartphone size={20} /> },
               { value: 'les_deux', label: 'Les deux', desc: 'Physique + QR code', icon: <Check size={20} /> },
             ].map((opt) => (
-              <label key={opt.value}
-                className={`flex flex-col items-center gap-2 p-4 rounded-xl border-2 cursor-pointer text-center transition-all ${formData.typeCarte === opt.value ? 'border-or bg-orange-50/30' : 'border-gray-200 hover:border-gray-300'}`}>
-                <input type="radio" name="typeCarte" value={opt.value} checked={formData.typeCarte === opt.value}
-                  onChange={() => setFormData((p) => ({ ...p, typeCarte: opt.value }))} className="sr-only" />
+              <label key={opt.value} className={`flex flex-col items-center gap-2 p-4 rounded-xl border-2 cursor-pointer text-center transition-all ${formData.typeCarte === opt.value ? 'border-or bg-orange-50/30' : 'border-gray-200 hover:border-gray-300'}`}>
+                <input type="radio" name="typeCarte" checked={formData.typeCarte === opt.value} onChange={() => h('typeCarte', opt.value)} className="sr-only" />
                 <div className={`p-2 rounded-lg ${formData.typeCarte === opt.value ? 'text-or' : 'text-gray-400'}`}>{opt.icon}</div>
-                <div className="font-bold text-sm">{opt.label}</div>
-                <div className="text-xs text-gray-500">{opt.desc}</div>
+                <div className="font-bold text-sm">{opt.label}</div><div className="text-xs text-gray-500">{opt.desc}</div>
               </label>
             ))}
           </div>
-          {formData.typeCarte !== 'digitale' && (
-            <p className="text-sm text-gray-500 mt-3">La carte physique est à retirer chez un commerçant partenaire de votre ville.</p>
-          )}
+          {formData.typeCarte !== 'digitale' && <p className="text-sm text-gray-500 mt-3">Carte physique à retirer chez un commerçant partenaire.</p>}
         </div>
 
-        {/* RGPD */}
         <label className="flex items-start gap-3 cursor-pointer">
-          <input type="checkbox" checked={formData.rgpd} onChange={(e) => setFormData((p) => ({ ...p, rgpd: e.target.checked }))}
-            className="mt-1 w-4 h-4 rounded accent-or" required />
-          <span className="text-sm text-gray-600">
-            J'accepte les <Link to="/cgv" className="underline text-bleu">Conditions Générales</Link> et la{' '}
-            <Link to="/confidentialite" className="underline text-bleu">politique de confidentialité</Link>.
-            Je certifie résider dans la ville sélectionnée et j'accepte de fournir un justificatif de domicile.
-          </span>
+          <input type="checkbox" checked={formData.rgpd} onChange={(e) => h('rgpd', e.target.checked)} className="mt-1 w-4 h-4 rounded accent-or" required />
+          <span className="text-sm text-gray-600">J'accepte les <Link to="/cgv" className="underline text-bleu">CGV</Link> et la <Link to="/confidentialite" className="underline text-bleu">politique de confidentialité</Link>. Je certifie résider dans la ville sélectionnée.</span>
         </label>
       </div>
-
       <div className="flex justify-between">
         <button onClick={onPrev} className="px-6 py-4 text-gray-500 font-bold hover:text-texte transition-colors">Retour</button>
-        <button onClick={onNext} disabled={!canNext}
-          className="px-8 py-4 bg-bleu hover:bg-bleu-clair disabled:bg-gray-300 disabled:cursor-not-allowed text-white font-bold rounded-xl transition-colors flex items-center gap-2">
-          Continuer <ChevronRight size={20} />
-        </button>
+        <button onClick={onNext} disabled={!canNext} className="px-8 py-4 bg-bleu hover:bg-bleu-clair disabled:bg-gray-300 disabled:cursor-not-allowed text-white font-bold rounded-xl transition-colors flex items-center gap-2">Continuer <ChevronRight size={20} /></button>
       </div>
     </div>
   );
 }
 
-// ── Stripe Form ──────────────────────────────────────────────
-function StripeForm({ formData, carteId, onSuccess, onPrev }) {
+function StripeForm({ formData, onSuccess, onPrev }) {
   const stripe = useStripe();
   const elements = useElements();
   const [loading, setLoading] = useState(false);
@@ -198,23 +143,12 @@ function StripeForm({ formData, carteId, onSuccess, onPrev }) {
     e.preventDefault();
     if (!stripe || !elements) return;
     setLoading(true); setError(null);
-    const { error: stripeError, paymentIntent } = await stripe.confirmPayment({ elements, redirect: 'if_required' });
-    if (stripeError) { setError(stripeError.message); setLoading(false); return; }
-    if (paymentIntent?.status === 'succeeded') {
-      try {
-        await confirmerPaiement(carteId, paymentIntent.id);
-        // Email non-bloquant
-        fetch('/api/send-confirmation-email', {
-          method: 'POST', headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            email: formData.email, prenom: formData.prenom, numero: formData.numeroCarte,
-            ville: formData.villeNom, formule: formData.formule,
-            qrToken: formData.qrToken, typeCarte: formData.typeCarte,
-          }),
-        }).catch(() => {});
-        onSuccess();
-      } catch { setError('Erreur de confirmation. Contactez-nous.'); }
-    }
+    const { error: err, paymentIntent } = await stripe.confirmPayment({ elements, redirect: 'if_required' });
+    if (err) { setError(err.message); setLoading(false); return; }
+    // Le webhook Stripe activera la carte côté serveur
+    // On passe directement à la confirmation
+    if (paymentIntent?.status === 'succeeded') onSuccess();
+    else setError('Paiement non confirmé. Contactez-nous.');
     setLoading(false);
   }
 
@@ -223,55 +157,48 @@ function StripeForm({ formData, carteId, onSuccess, onPrev }) {
       <PaymentElement options={{ layout: 'tabs', defaultValues: { billingDetails: { email: formData.email } } }} />
       {error && <div className="p-4 bg-red-50 border border-red-200 rounded-xl text-red-700 text-sm">{error}</div>}
       <div className="flex justify-between pt-4">
-        <button type="button" onClick={onPrev} className="px-6 py-4 text-gray-500 font-bold hover:text-texte transition-colors">Retour</button>
+        <button type="button" onClick={onPrev} className="px-6 py-4 text-gray-500 font-bold">Retour</button>
         <button type="submit" disabled={!stripe || loading}
           className="px-8 py-4 bg-or hover:bg-or-clair disabled:opacity-60 text-white font-bold rounded-xl transition-colors shadow-lg flex items-center gap-2">
-          {loading ? (<><div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" /> Traitement...</>)
-            : (<><CreditCard size={20} /> Payer {STRIPE_PRICES[formData.formule]?.montant / 100}€</>)}
+          {loading ? <><div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" /> Traitement...</> : <><CreditCard size={20} /> Payer {STRIPE_PRICES[formData.formule]?.montant / 100}€</>}
         </button>
       </div>
     </form>
   );
 }
 
-// ── Step 3: Paiement ─────────────────────────────────────────
 function StepPaiement({ formData, setFormData, onSuccess, onPrev }) {
   const [clientSecret, setClientSecret] = useState(null);
-  const [carteId, setCarteId] = useState(null);
   const [loadingSetup, setLoadingSetup] = useState(true);
   const [setupError, setSetupError] = useState(null);
-  const formRef = useRef(formData);
-  formRef.current = formData;
+  const formRef = useRef(formData); formRef.current = formData;
   const tarif = STRIPE_PRICES[formData.formule];
 
   useEffect(() => {
-    let cancelled = false;
-    async function setup() {
+    let c = false;
+    (async () => {
       const fd = formRef.current;
       try {
-        const carte = await creerInscription({
+        const result = await creerInscription({
           formule: fd.formule, ville_slug: fd.ville, prenom: fd.prenom, nom: fd.nom,
-          email: fd.email, telephone: fd.telephone, adresse: null,
+          prenom2: fd.prenom2, nom2: fd.nom2, email: fd.email, telephone: fd.telephone,
           retrait_commerce: true, type_carte: fd.typeCarte,
         });
-        if (cancelled) return;
-        setCarteId(carte.id);
-        setFormData((p) => ({ ...p, numeroCarte: carte.numero, qrToken: carte.qr_token }));
+        if (c) return;
+        setFormData((p) => ({ ...p, numeroCarte: result.carte1.numero, qrToken: result.carte1.qr_token, carte2: result.carte2 }));
 
-        // Le serveur détermine le montant à partir de la formule — sécurisé
         const res = await fetch('/api/create-payment-intent', {
           method: 'POST', headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ formule: fd.formule, email: fd.email, carte_id: carte.id }),
+          body: JSON.stringify({ formule: fd.formule, email: fd.email, carte_id: result.carte1.id }),
         });
-        if (!res.ok) { const err = await res.json().catch(() => ({})); throw new Error(err.error || 'Impossible de créer le paiement'); }
+        if (!res.ok) { const e = await res.json().catch(() => ({})); throw new Error(e.error || 'Erreur paiement'); }
         const { clientSecret: cs } = await res.json();
-        if (!cancelled) setClientSecret(cs);
-      } catch (err) { if (!cancelled) setSetupError(err.message); }
-      finally { if (!cancelled) setLoadingSetup(false); }
-    }
-    setup();
-    return () => { cancelled = true; };
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+        if (!c) setClientSecret(cs);
+      } catch (err) { if (!c) setSetupError(err.message); }
+      finally { if (!c) setLoadingSetup(false); }
+    })();
+    return () => { c = true; };
+  }, []); // eslint-disable-line
 
   return (
     <div className="p-8 md:p-12">
@@ -289,39 +216,29 @@ function StepPaiement({ formData, setFormData, onSuccess, onPrev }) {
           </div>
         </div>
         <div className="flex-1">
-          {loadingSetup ? (
-            <div className="flex items-center justify-center h-40"><div className="w-8 h-8 border-4 border-or border-t-transparent rounded-full animate-spin" /></div>
-          ) : setupError ? (
-            <div className="p-4 bg-red-50 border border-red-200 rounded-xl text-red-700">{setupError}<button onClick={onPrev} className="block mt-3 text-sm underline">Retour</button></div>
-          ) : clientSecret ? (
-            <Elements stripe={stripePromise} options={{ clientSecret, appearance: { theme: 'stripe', variables: { colorPrimary: '#c8963e', borderRadius: '12px', fontFamily: '"Source Sans 3", sans-serif' } } }}>
-              <StripeForm formData={formData} carteId={carteId} onSuccess={onSuccess} onPrev={onPrev} />
-            </Elements>
-          ) : null}
+          {loadingSetup ? <div className="flex items-center justify-center h-40"><div className="w-8 h-8 border-4 border-or border-t-transparent rounded-full animate-spin" /></div>
+           : setupError ? <div className="p-4 bg-red-50 border border-red-200 rounded-xl text-red-700">{setupError}<button onClick={onPrev} className="block mt-3 text-sm underline">Retour</button></div>
+           : clientSecret ? <Elements stripe={stripePromise} options={{ clientSecret, appearance: { theme: 'stripe', variables: { colorPrimary: '#c8963e', borderRadius: '12px', fontFamily: '"Source Sans 3", sans-serif' } } }}><StripeForm formData={formData} onSuccess={onSuccess} onPrev={onPrev} /></Elements>
+           : null}
         </div>
       </div>
     </div>
   );
 }
 
-// ── Step 4 ───────────────────────────────────────────────────
 function StepConfirmation({ formData }) {
   const isDigital = formData.typeCarte === 'digitale' || formData.typeCarte === 'les_deux';
-  const expDate = new Date();
-  expDate.setFullYear(expDate.getFullYear() + 1);
-  const expStr = `${String(expDate.getMonth() + 1).padStart(2, '0')}/${expDate.getFullYear()}`;
+  const exp = new Date(); exp.setFullYear(exp.getFullYear() + 1);
+  const expStr = `${String(exp.getMonth() + 1).padStart(2, '0')}/${exp.getFullYear()}`;
 
   return (
     <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="p-8 md:p-16 text-center">
-      <div className="w-24 h-24 rounded-full bg-green-100 text-vert flex items-center justify-center mx-auto mb-8">
-        <Check size={48} strokeWidth={3} />
-      </div>
+      <div className="w-24 h-24 rounded-full bg-green-100 text-vert flex items-center justify-center mx-auto mb-8"><Check size={48} strokeWidth={3} /></div>
       <h2 className="font-serif text-4xl font-bold text-texte mb-4">Félicitations {formData.prenom} !</h2>
       <p className="text-xl text-gray-600 mb-10 max-w-lg mx-auto">
-        Votre Carte Résident a bien été créée. Un email de confirmation avec votre carte a été envoyé à <strong>{formData.email}</strong>.
+        Votre paiement a été accepté. Votre carte sera activée dans quelques instants et un email de confirmation sera envoyé à <strong>{formData.email}</strong>.
         {formData.typeCarte !== 'digitale' && ' Récupérez votre carte physique chez un commerçant partenaire.'}
       </p>
-
       {formData.numeroCarte && (
         <div className="mb-8">
           <CarteDigitale ville={formData.villeNom || 'Ma ville'} numero={formData.numeroCarte}
@@ -329,56 +246,39 @@ function StepConfirmation({ formData }) {
             formule={formData.formule} qrToken={isDigital ? formData.qrToken : null} />
         </div>
       )}
-
-      {isDigital && (
-        <p className="text-sm text-gray-500 mb-6 max-w-md mx-auto">
-          Faites une capture d'écran de cette carte pour la montrer aux commerçants partenaires.
-        </p>
+      {formData.carte2 && (
+        <div className="mb-8">
+          <p className="text-sm text-gray-500 mb-4">Carte du titulaire 2 :</p>
+          <CarteDigitale ville={formData.villeNom || 'Ma ville'} numero={formData.carte2.numero}
+            expiration={expStr} prenom={formData.prenom2} nom={formData.nom2}
+            formule={formData.formule} qrToken={isDigital ? formData.carte2.qr_token : null} />
+        </div>
       )}
-
+      {isDigital && <p className="text-sm text-gray-500 mb-6 max-w-md mx-auto">Faites une capture d'écran pour montrer votre carte aux commerçants.</p>}
       <div className="bg-orange-50 rounded-xl p-4 max-w-md mx-auto mb-8 border border-orange-100">
-        <p className="text-sm text-orange-800">
-          <strong>Prochaine étape :</strong> vous recevrez un email vous demandant un justificatif de domicile pour valider définitivement votre carte.
-        </p>
+        <p className="text-sm text-orange-800"><strong>Prochaine étape :</strong> un justificatif de domicile vous sera demandé par email.</p>
       </div>
-
-      <Link to={formData.ville ? `/villes/${formData.ville}` : '/'}
-        className="inline-flex items-center justify-center px-8 py-4 text-lg font-bold rounded-xl text-white bg-bleu hover:bg-bleu-clair transition-colors shadow-lg">
+      <Link to={formData.ville ? `/villes/${formData.ville}` : '/'} className="inline-flex items-center justify-center px-8 py-4 text-lg font-bold rounded-xl text-white bg-bleu hover:bg-bleu-clair transition-colors shadow-lg">
         Découvrir mes avantages →
       </Link>
     </motion.div>
   );
 }
 
-// ── Page principale ──────────────────────────────────────────
 export default function Inscription() {
   const [searchParams] = useSearchParams();
   const [step, setStep] = useState(1);
   const [villesActives, setVillesActives] = useState([]);
   const [formData, setFormData] = useState({
-    formule: searchParams.get('formule') || 'individuel',
-    ville: searchParams.get('ville') || '', villeNom: '',
-    typeCarte: 'physique',
-    prenom: '', nom: '', prenom2: '', nom2: '',
-    email: '', telephone: '',
-    retraitCommerce: true, rgpd: false,
-    numeroCarte: null, qrToken: null,
+    formule: searchParams.get('formule') || 'individuel', ville: searchParams.get('ville') || '', villeNom: '',
+    typeCarte: 'physique', prenom: '', nom: '', prenom2: '', nom2: '', email: '', telephone: '',
+    rgpd: false, numeroCarte: null, qrToken: null, carte2: null,
   });
 
   useEffect(() => {
-    let cancelled = false;
-    getVilles().then((villes) => {
-      if (!cancelled) {
-        const actives = villes.filter((v) => v.statut === 'actif');
-        setVillesActives(actives);
-        const villeParam = searchParams.get('ville');
-        if (villeParam) {
-          const match = actives.find((v) => v.slug === villeParam);
-          if (match) setFormData((p) => ({ ...p, ville: match.slug, villeNom: match.nom }));
-        }
-      }
-    }).catch(console.error);
-    return () => { cancelled = true; };
+    let c = false;
+    getVilles().then((v) => { if (!c) { const a = v.filter((x) => x.statut === 'actif'); setVillesActives(a); const p = searchParams.get('ville'); if (p) { const m = a.find((x) => x.slug === p); if (m) setFormData((prev) => ({ ...prev, ville: m.slug, villeNom: m.nom })); } } }).catch(console.error);
+    return () => { c = true; };
   }, []);
 
   const next = () => setStep((s) => Math.min(s + 1, 4));

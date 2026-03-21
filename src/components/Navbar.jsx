@@ -8,6 +8,7 @@ const NAV_LINKS = [
   { name: 'Tarifs', anchor: 'tarifs', path: '/' },
   { name: 'Commerçants', path: '/commercants' },
   { name: 'Offrir une carte', anchor: 'cartes-cadeaux', path: '/' },
+  { name: 'Mon espace', path: '/mon-espace' },
 ];
 
 export default function Navbar() {

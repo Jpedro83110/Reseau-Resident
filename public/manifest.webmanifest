@@ -1,0 +1,15 @@
+{
+  "name": "Carte Résident",
+  "short_name": "Carte Résident",
+  "description": "Programme de fidélité locale — soutenez vos commerces de quartier",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#faf7f2",
+  "theme_color": "#1a3a5c",
+  "orientation": "portrait",
+  "icons": [
+    { "src": "/favicon.svg", "sizes": "any", "type": "image/svg+xml" },
+    { "src": "/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png" }
+  ]
+}

@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { getVilles, getVilleBySlug, getStatsMensuelles, getDashboardStats } from '../lib/api';
+import { getVilles, getVilleBySlug, getStatsMensuelles, getAdminDashboard } from '../lib/api';
 
 function useAsync(asyncFn, deps = []) {
   const [state, setState] = useState({ data: null, loading: true, error: null });
@@ -10,6 +10,7 @@ function useAsync(asyncFn, deps = []) {
       .then((data) => { if (!cancelled) setState({ data, loading: false, error: null }); })
       .catch((error) => { if (!cancelled) setState({ data: null, loading: false, error }); });
     return () => { cancelled = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, deps);
   return state;
 }
@@ -26,7 +27,7 @@ export function useStatsMensuelles(villeId) {
   return useAsync(fn, [villeId]);
 }
 
-export function useDashboard(villeSlug) {
-  const fn = useCallback(() => getDashboardStats(villeSlug), [villeSlug]);
+export function useAdminDashboard(villeSlug) {
+  const fn = useCallback(() => (villeSlug ? getAdminDashboard(villeSlug) : Promise.resolve(null)), [villeSlug]);
   return useAsync(fn, [villeSlug]);
 }

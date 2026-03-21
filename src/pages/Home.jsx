@@ -1,7 +1,7 @@
 import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import { Coffee, Percent, Gift, Store, CreditCard, MapPin } from 'lucide-react';
-import { CarteVisuelle, SearchVille, VilleCard, TarifsSection, StatsWidget, CartesCadeaux } from '../components/index.jsx';
+import { CarteVisuelle, SearchVille, VilleCard, TarifsSection, CartesCadeaux } from '../components/index.jsx';
 import { useVilles } from '../hooks/useData';
 
 const AVANTAGES = [
