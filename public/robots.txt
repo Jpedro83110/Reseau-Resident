@@ -1,0 +1,11 @@
+User-agent: *
+Allow: /
+Disallow: /mon-espace
+Disallow: /mon-commerce
+Disallow: /mon-association
+Disallow: /mairie
+Disallow: /dashboard
+Disallow: /scan
+Disallow: /completer-profil
+Disallow: /api/
+Sitemap: https://reseaux-resident.fr/sitemap.xml
