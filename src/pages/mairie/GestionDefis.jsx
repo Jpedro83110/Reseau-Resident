@@ -42,7 +42,7 @@ export default function GestionDefis() {
         const { data: profil } = await supabase.from('mairie_profiles').select('ville_id').eq('id', user.id).maybeSingle();
         if (!profil) { setIsLoading(false); return; }
         setVilleId(profil.ville_id);
-        const { data } = await supabase.from('defis').select('*').eq('ville_id', profil.ville_id).order('created_at', { ascending: false });
+        const { data } = await supabase.from('defis').select('id, ville_id, titre, description, type, points_recompense, objectif_description, objectif_nombre, date_fin, actif, participants_count, created_at').eq('ville_id', profil.ville_id).order('created_at', { ascending: false });
         setDefis(data ?? []);
       } catch (err) {
         console.error('Erreur GestionDefis:', err);

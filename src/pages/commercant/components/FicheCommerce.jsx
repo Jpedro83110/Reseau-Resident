@@ -1,8 +1,11 @@
 // src/pages/commercant/components/FicheCommerce.jsx
 // Fiche commerce en lecture + mode édition avec horaires JSONB
 import { useState } from 'react';
-import { Edit3, Save, X, MapPin, Phone, Mail, Globe, Clock } from 'lucide-react';
+import { Edit3, Save, X, MapPin, Phone, Mail, Globe, Clock, Upload, Image as ImageIcon, Trash2 } from 'lucide-react';
 import { supabase } from '../../../lib/supabase';
+
+const MAX_PHOTOS = 5;
+const MAX_PHOTO_SIZE = 2 * 1024 * 1024; // 2 Mo
 
 const JOURS = ['lundi', 'mardi', 'mercredi', 'jeudi', 'vendredi', 'samedi', 'dimanche'];
 const JOURS_LABELS = { lundi: 'Lundi', mardi: 'Mardi', mercredi: 'Mercredi', jeudi: 'Jeudi', vendredi: 'Vendredi', samedi: 'Samedi', dimanche: 'Dimanche' };
@@ -12,6 +15,9 @@ const DEFAULT_HORAIRES = Object.fromEntries(JOURS.map((j) => [j, { ouvert: j !==
 export default function FicheCommerce({ commerce, onUpdate }) {
   const [editing, setEditing] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [photos, setPhotos] = useState(commerce.photos ?? []);
+  const [uploadingPhoto, setUploadingPhoto] = useState(false);
+  const [photoError, setPhotoError] = useState(null);
   const [form, setForm] = useState({
     nom: commerce.nom || '',
     categorie: commerce.categorie || '',
@@ -22,6 +28,45 @@ export default function FicheCommerce({ commerce, onUpdate }) {
     site_web: commerce.site_web || '',
     horaires: commerce.horaires || DEFAULT_HORAIRES,
   });
+
+  async function handlePhotoUpload(e) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > MAX_PHOTO_SIZE) { setPhotoError('La photo ne doit pas dépasser 2 Mo.'); return; }
+    if (photos.length >= MAX_PHOTOS) { setPhotoError(`Maximum ${MAX_PHOTOS} photos.`); return; }
+
+    try {
+      setUploadingPhoto(true);
+      setPhotoError(null);
+      const ext = file.name.split('.').pop();
+      const path = `${commerce.id}/${Date.now()}.${ext}`;
+      const { error: upErr } = await supabase.storage.from('commerces-photos').upload(path, file);
+      if (upErr) throw upErr;
+      const { data: urlData } = supabase.storage.from('commerces-photos').getPublicUrl(path);
+      const newPhotos = [...photos, urlData.publicUrl];
+      const { error: updErr } = await supabase.from('commerces').update({ photos: newPhotos }).eq('id', commerce.id);
+      if (updErr) throw updErr;
+      setPhotos(newPhotos);
+      onUpdate?.();
+    } catch (err) {
+      console.error('Erreur upload photo:', err);
+      setPhotoError('Erreur lors de l\'upload de la photo.');
+    } finally {
+      setUploadingPhoto(false);
+    }
+  }
+
+  async function handlePhotoDelete(url) {
+    try {
+      const newPhotos = photos.filter((p) => p !== url);
+      const { error: updErr } = await supabase.from('commerces').update({ photos: newPhotos }).eq('id', commerce.id);
+      if (updErr) throw updErr;
+      setPhotos(newPhotos);
+      onUpdate?.();
+    } catch (err) {
+      console.error('Erreur suppression photo:', err);
+    }
+  }
 
   async function handleSave() {
     setSaving(true);
@@ -82,6 +127,22 @@ export default function FicheCommerce({ commerce, onUpdate }) {
                     </div>
                   );
                 })}
+              </div>
+            </div>
+          )}
+
+          {/* Photos */}
+          {photos.length > 0 && (
+            <div>
+              <h4 className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2 flex items-center gap-1">
+                <ImageIcon size={12} /> Photos
+              </h4>
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                {photos.map((url, i) => (
+                  <div key={i} className="h-24 rounded-lg overflow-hidden">
+                    <img src={url} alt={`Photo ${i + 1}`} className="w-full h-full object-cover" loading="lazy" />
+                  </div>
+                ))}
               </div>
             </div>
           )}
@@ -165,6 +226,42 @@ export default function FicheCommerce({ commerce, onUpdate }) {
               );
             })}
           </div>
+        </div>
+
+        {/* Photos du commerce */}
+        <div>
+          <label className="block text-xs font-bold text-gray-600 mb-2">Photos du commerce ({photos.length}/{MAX_PHOTOS})</label>
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 mb-3">
+            {photos.map((url, i) => (
+              <div key={i} className="relative h-24 rounded-lg overflow-hidden border border-gray-200 group">
+                <img src={url} alt={`Photo ${i + 1}`} className="w-full h-full object-cover" loading="lazy" />
+                <button
+                  type="button"
+                  onClick={() => handlePhotoDelete(url)}
+                  className="absolute top-1.5 right-1.5 p-1 bg-white/90 rounded-full text-gray-500 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity"
+                  aria-label="Supprimer la photo"
+                >
+                  <Trash2 size={12} />
+                </button>
+              </div>
+            ))}
+            {photos.length < MAX_PHOTOS && (
+              <label className="flex flex-col items-center justify-center h-24 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:border-bleu/50 transition-colors">
+                {uploadingPhoto ? (
+                  <span className="w-5 h-5 border-2 border-gray-300 border-t-bleu rounded-full animate-spin" />
+                ) : (
+                  <>
+                    <Upload size={16} className="text-gray-300 mb-1" />
+                    <span className="text-[10px] text-gray-400">Ajouter (max 2 Mo)</span>
+                  </>
+                )}
+                <input type="file" accept="image/*" onChange={handlePhotoUpload} className="hidden" disabled={uploadingPhoto} />
+              </label>
+            )}
+          </div>
+          {photoError && (
+            <p className="text-xs text-red-600 mb-2">{photoError}</p>
+          )}
         </div>
 
         <button onClick={handleSave} disabled={saving}

@@ -6,6 +6,7 @@ import { motion } from 'framer-motion';
 import {
   ArrowLeft, Calendar, TrendingUp, Users, Target, Heart,
   CheckCircle2, Circle, Lock, Edit3, XCircle, Image as ImageIcon,
+  Save, Trash2, PenLine,
 } from 'lucide-react';
 import { useAuthContext } from '../../contexts/AuthContext';
 import { supabase } from '../../lib/supabase';
@@ -28,6 +29,12 @@ export default function DetailProjet() {
   const [association, setAssociation] = useState(null);
   const [soutiens, setSoutiens] = useState([]);
   const [isOwner, setIsOwner] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
+  const [editForm, setEditForm] = useState(null);
+  const [isSaving, setIsSaving] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [deleteConfirmText, setDeleteConfirmText] = useState('');
+  const [isDeleting, setIsDeleting] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
 
@@ -92,6 +99,54 @@ export default function DetailProjet() {
       .eq('id', id);
     if (!updateError) {
       setProjet((prev) => ({ ...prev, statut: 'cloture' }));
+    }
+  }
+
+  function startEditing() {
+    setEditForm({
+      titre: projet.titre,
+      description: projet.description ?? '',
+      objectif_montant: projet.objectif_montant ?? '',
+      objectif_description: projet.objectif_description ?? '',
+      date_limite: projet.date_limite ? projet.date_limite.slice(0, 10) : '',
+      image_url: projet.image_url ?? '',
+    });
+    setIsEditing(true);
+  }
+
+  async function handleSaveEdit() {
+    try {
+      setIsSaving(true);
+      const payload = {
+        titre: editForm.titre.trim(),
+        description: editForm.description.trim(),
+        objectif_montant: editForm.objectif_montant ? parseFloat(editForm.objectif_montant) : null,
+        objectif_description: editForm.objectif_description.trim() || null,
+        date_limite: editForm.date_limite ? `${editForm.date_limite}T23:59:00` : null,
+        image_url: editForm.image_url.trim() || null,
+      };
+      const { error: updateError } = await supabase.from('projets').update(payload).eq('id', projet.id);
+      if (updateError) throw updateError;
+      // Recharger les données
+      const { data: refreshed } = await supabase.from('projets').select('id, association_id, ville_id, titre, description, objectif_montant, montant_collecte, objectif_description, paliers, image_url, date_limite, statut, source, source_id, created_at, updated_at').eq('id', projet.id).maybeSingle();
+      if (refreshed) setProjet(refreshed);
+      setIsEditing(false);
+    } catch (err) {
+      console.error('Erreur sauvegarde projet:', err);
+    } finally {
+      setIsSaving(false);
+    }
+  }
+
+  async function handleDelete() {
+    try {
+      setIsDeleting(true);
+      const { error: delErr } = await supabase.from('projets').delete().eq('id', projet.id);
+      if (delErr) throw delErr;
+      navigate('/mon-association');
+    } catch (err) {
+      console.error('Erreur suppression projet:', err);
+      setIsDeleting(false);
     }
   }
 
@@ -183,6 +238,64 @@ export default function DetailProjet() {
               <div>
                 <p className="text-sm font-medium text-texte">{association.nom}</p>
                 <p className="text-xs text-gray-400">{association.categorie}</p>
+              </div>
+            </div>
+          )}
+
+          {/* ── Formulaire d'édition ── */}
+          {isEditing && editForm && (
+            <div className="bg-white rounded-xl border border-gray-200 p-5 mb-6 space-y-4">
+              <h2 className="font-semibold text-texte flex items-center gap-2">
+                <PenLine size={16} className="text-bleu" />
+                Modifier le projet
+              </h2>
+              <div>
+                <label className="block text-xs font-medium text-gray-600 mb-1">Titre</label>
+                <input type="text" value={editForm.titre} onChange={(e) => setEditForm({ ...editForm, titre: e.target.value })}
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-bleu focus:border-bleu outline-none" />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-gray-600 mb-1">Description</label>
+                <textarea rows={4} value={editForm.description} onChange={(e) => setEditForm({ ...editForm, description: e.target.value })}
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-bleu focus:border-bleu outline-none resize-none" />
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-medium text-gray-600 mb-1">Objectif (EUR)</label>
+                  <input type="number" min="0" step="0.01" value={editForm.objectif_montant}
+                    onChange={(e) => setEditForm({ ...editForm, objectif_montant: e.target.value })}
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-bleu focus:border-bleu outline-none" />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-gray-600 mb-1">Date limite</label>
+                  <input type="date" value={editForm.date_limite}
+                    onChange={(e) => setEditForm({ ...editForm, date_limite: e.target.value })}
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-bleu focus:border-bleu outline-none" />
+                </div>
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-gray-600 mb-1">Description de l'objectif</label>
+                <input type="text" value={editForm.objectif_description}
+                  onChange={(e) => setEditForm({ ...editForm, objectif_description: e.target.value })}
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-bleu focus:border-bleu outline-none" />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-gray-600 mb-1">URL de l'image</label>
+                <input type="url" value={editForm.image_url}
+                  onChange={(e) => setEditForm({ ...editForm, image_url: e.target.value })}
+                  placeholder="https://..."
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-bleu focus:border-bleu outline-none" />
+              </div>
+              <div className="flex gap-3">
+                <button onClick={() => setIsEditing(false)}
+                  className="px-4 py-2 text-sm font-medium text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
+                  Annuler
+                </button>
+                <button onClick={handleSaveEdit} disabled={isSaving || !editForm.titre.trim()}
+                  className="flex items-center gap-2 px-5 py-2 text-sm font-medium bg-bleu text-white rounded-lg hover:bg-bleu-clair disabled:opacity-60 transition-colors">
+                  {isSaving ? <span className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin" /> : <Save size={14} />}
+                  {isSaving ? 'Enregistrement...' : 'Sauvegarder'}
+                </button>
               </div>
             </div>
           )}
@@ -325,6 +438,15 @@ export default function DetailProjet() {
                   <Edit3 size={16} />
                   Retour au dashboard
                 </Link>
+                {projet.statut !== 'cloture' && !isEditing && (
+                  <button
+                    onClick={startEditing}
+                    className="flex items-center justify-center gap-2 px-5 py-3 text-sm font-medium bg-bleu text-white rounded-xl hover:bg-bleu-clair transition-colors"
+                  >
+                    <PenLine size={16} />
+                    Modifier le projet
+                  </button>
+                )}
                 {projet.statut !== 'cloture' && (
                   <button
                     onClick={handleCloturer}
@@ -334,6 +456,13 @@ export default function DetailProjet() {
                     Clôturer le projet
                   </button>
                 )}
+                <button
+                  onClick={() => setShowDeleteConfirm(true)}
+                  className="flex items-center justify-center gap-2 px-5 py-3 text-sm font-medium border border-red-300 text-red-600 rounded-xl hover:bg-red-50 transition-colors"
+                >
+                  <Trash2 size={16} />
+                  Supprimer
+                </button>
               </>
             ) : (
               <button
@@ -346,6 +475,44 @@ export default function DetailProjet() {
               </button>
             )}
           </div>
+
+          {/* ── Modal de confirmation suppression ── */}
+          {showDeleteConfirm && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4" onClick={() => setShowDeleteConfirm(false)}>
+              <div className="bg-white rounded-2xl shadow-xl w-full max-w-md p-6" onClick={(e) => e.stopPropagation()}>
+                <h3 className="font-semibold text-texte text-lg mb-2">Supprimer le projet</h3>
+                <p className="text-sm text-gray-600 mb-4">
+                  Cette action est irréversible. Tapez le titre du projet pour confirmer :
+                </p>
+                <p className="text-sm font-mono text-gray-500 bg-gray-50 rounded-lg px-3 py-2 mb-3 break-words">
+                  {projet.titre}
+                </p>
+                <input
+                  type="text"
+                  value={deleteConfirmText}
+                  onChange={(e) => setDeleteConfirmText(e.target.value)}
+                  placeholder="Tapez le titre du projet ici"
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none mb-4"
+                />
+                <div className="flex gap-3">
+                  <button
+                    onClick={() => { setShowDeleteConfirm(false); setDeleteConfirmText(''); }}
+                    className="flex-1 px-4 py-2 text-sm font-medium text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+                  >
+                    Annuler
+                  </button>
+                  <button
+                    onClick={handleDelete}
+                    disabled={deleteConfirmText !== projet.titre || isDeleting}
+                    className="flex-1 flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50 transition-colors"
+                  >
+                    {isDeleting ? <span className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin" /> : <Trash2 size={14} />}
+                    {isDeleting ? 'Suppression...' : 'Supprimer définitivement'}
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
 
         </motion.div>
       </div>

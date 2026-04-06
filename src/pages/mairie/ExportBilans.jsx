@@ -121,8 +121,8 @@ export default function ExportBilans() {
     charger();
   }, [user]);
 
-  // Requête données par type
-  async function fetchData(type) {
+  // Requête données par type — maxRows sert à limiter les previews (null = pas de limite)
+  async function fetchData(type, maxRows = null) {
     const depuis = dateLimite(periode);
     const villeId = ville.id;
 
@@ -130,18 +130,21 @@ export default function ExportBilans() {
       case 'residents': {
         let q = supabase.from('profiles').select('prenom, nom, email, adresse, created_at').eq('ville_id', villeId).order('created_at', { ascending: false });
         if (depuis) q = q.gte('created_at', depuis);
+        if (maxRows) q = q.limit(maxRows);
         const { data } = await q;
         return data ?? [];
       }
       case 'commerces': {
         let q = supabase.from('commerces').select('nom, categorie, adresse, telephone, avantage, visites, created_at').eq('ville_id', villeId).order('nom');
         if (depuis) q = q.gte('created_at', depuis);
+        if (maxRows) q = q.limit(maxRows);
         const { data } = await q;
         return data ?? [];
       }
       case 'projets': {
         let q = supabase.from('projets').select('titre, objectif_montant, montant_collecte, statut, date_limite, created_at, associations(nom)').eq('ville_id', villeId).order('created_at', { ascending: false });
         if (depuis) q = q.gte('created_at', depuis);
+        if (maxRows) q = q.limit(maxRows);
         const { data } = await q;
         return (data ?? []).map((p) => ({ ...p, association: p.associations?.nom ?? '' }));
       }
@@ -152,6 +155,7 @@ export default function ExportBilans() {
         if (ids.length === 0) return [];
         let q = supabase.from('visites').select('commerce_id, carte_id, source, date_visite, cartes(numero)').in('commerce_id', ids).order('date_visite', { ascending: false });
         if (depuis) q = q.gte('date_visite', depuis);
+        if (maxRows) q = q.limit(maxRows);
         const { data } = await q;
         return (data ?? []).map((v) => ({
           commerce: comMap[v.commerce_id] ?? '',
@@ -170,7 +174,7 @@ export default function ExportBilans() {
     try {
       setIsPreviewLoading(true);
       setPreviewType(type);
-      const data = await fetchData(type);
+      const data = await fetchData(type, 100);
       setPreviewData(data);
     } catch (err) {
       console.error('Erreur preview:', err);

@@ -200,7 +200,7 @@ export default function DashboardCommercant() {
         <motion.div key={onglet} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.2 }}>
           {onglet === 'fiche' && <FicheCommerce commerce={commerce} onUpdate={handleUpdate} />}
           {onglet === 'offres' && <GestionOffres commerceId={commerce.id} categorie={commerce.categorie} />}
-          {onglet === 'stats' && <StatsCommerce commerceId={commerce.id} />}
+          {onglet === 'stats' && <StatsCommerce commerceId={commerce.id} commerceNom={commerce.nom} />}
           {onglet === 'avis' && <AvisClients commerceId={commerce.id} />}
           {onglet === 'evenements' && <GestionEvenements organisateurType="commerce" organisateurId={commerce.id} villeId={commerce.ville_id} />}
           {onglet === 'actualites' && <GestionActualites auteurType="commerce" auteurId={commerce.id} villeId={commerce.ville_id} />}

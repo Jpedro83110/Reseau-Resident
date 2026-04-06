@@ -4,12 +4,14 @@ import { useState, useEffect } from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { TrendingUp, TrendingDown, Users, Eye, Star, Tag } from 'lucide-react';
 import { supabase } from '../../../lib/supabase';
+import ExportDonneesCommerce from './ExportDonneesCommerce';
 
 const JOURS_SEMAINE = ['Dim', 'Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam'];
 
-export default function StatsCommerce({ commerceId }) {
+export default function StatsCommerce({ commerceId, commerceNom }) {
   const [stats, setStats] = useState(null);
   const [visitesParJour, setVisitesParJour] = useState([]);
+  const [visitesParHeure, setVisitesParHeure] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -23,7 +25,7 @@ export default function StatsCommerce({ commerceId }) {
         const il30j = new Date(now - 30 * 86400000).toISOString();
 
         const [visitesRes, visitesMoisRes, visitesMois1Res, offresRes, avisRes] = await Promise.all([
-          supabase.from('visites').select('date_visite').eq('commerce_id', commerceId).gte('date_visite', il30j),
+          supabase.from('visites').select('date_visite').eq('commerce_id', commerceId).gte('date_visite', il30j).limit(5000),
           supabase.from('visites').select('id', { count: 'exact', head: true }).eq('commerce_id', commerceId).gte('date_visite', debutMois),
           supabase.from('visites').select('id', { count: 'exact', head: true }).eq('commerce_id', commerceId).gte('date_visite', debutMoisDernier).lte('date_visite', finMoisDernier),
           supabase.from('offres').select('id', { count: 'exact', head: true }).eq('commerce_id', commerceId).eq('active', true),
@@ -51,6 +53,17 @@ export default function StatsCommerce({ commerceId }) {
           jourCounts[d]++;
         });
         setVisitesParJour(JOURS_SEMAINE.map((label, i) => ({ jour: label, visites: jourCounts[i] })));
+
+        // Visites par tranche horaire
+        const heureCounts = Array(24).fill(0);
+        (visitesRes.data ?? []).forEach((v) => {
+          const h = new Date(v.date_visite).getHours();
+          heureCounts[h]++;
+        });
+        setVisitesParHeure(heureCounts.map((count, h) => ({
+          heure: `${String(h).padStart(2, '0')}h`,
+          visites: count,
+        })));
       } catch (err) {
         console.error('Erreur StatsCommerce:', err);
       } finally {
@@ -66,7 +79,7 @@ export default function StatsCommerce({ commerceId }) {
   return (
     <div className="space-y-6">
       {/* KPIs */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
         <div className="bg-white rounded-xl border border-gray-200 p-4">
           <Eye size={18} className="text-bleu mb-2" />
           <div className="text-2xl font-bold text-texte">{stats.visitesMois}</div>
@@ -105,6 +118,25 @@ export default function StatsCommerce({ commerceId }) {
             <Bar dataKey="visites" fill="#1a3a5c" radius={[4, 4, 0, 0]} name="Visites" />
           </BarChart>
         </ResponsiveContainer>
+      </div>
+
+      {/* Graphique visites par tranche horaire */}
+      <div className="bg-white rounded-xl border border-gray-200 p-5">
+        <h3 className="font-semibold text-sm text-texte mb-4">Visites par tranche horaire (30 derniers jours)</h3>
+        <ResponsiveContainer width="100%" height={200}>
+          <BarChart data={visitesParHeure}>
+            <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+            <XAxis dataKey="heure" tick={{ fontSize: 9 }} interval={1} />
+            <YAxis tick={{ fontSize: 11 }} allowDecimals={false} />
+            <Tooltip />
+            <Bar dataKey="visites" fill="#c8963e" radius={[4, 4, 0, 0]} name="Visites" />
+          </BarChart>
+        </ResponsiveContainer>
+      </div>
+
+      {/* Export CSV */}
+      <div className="flex justify-end">
+        <ExportDonneesCommerce commerceId={commerceId} commerceNom={commerceNom} />
       </div>
     </div>
   );

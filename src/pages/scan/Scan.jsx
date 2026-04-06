@@ -79,7 +79,7 @@ function ScanResult({ carte, commerces, qrToken }) {
       </div>
       <div className="bg-gradient-to-br from-bleu to-[#0d2440] rounded-2xl p-6 text-white mb-8">
         <div className="flex items-center gap-3 mb-4"><User size={20} className="text-or-clair" /><span className="text-lg font-bold">{carte.prenom} {carte.nom}</span></div>
-        <div className="grid grid-cols-2 gap-4 text-sm">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
           <div><div className="text-blue-300 text-xs uppercase tracking-wider mb-1">Numéro</div><div className="font-mono font-bold">{carte.numero}</div></div>
           <div><div className="text-blue-300 text-xs uppercase tracking-wider mb-1">Formule</div><div className="font-bold capitalize">{carte.formule}</div></div>
           <div><div className="text-blue-300 text-xs uppercase tracking-wider mb-1">Ville</div><div className="font-bold">{carte.ville_nom}</div></div>

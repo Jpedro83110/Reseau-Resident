@@ -103,8 +103,8 @@ function VilleActive({ ville }) {
   useEffect(() => {
     if (!ville.id) return;
     let c = false;
-    getOffresVille(ville.id).then((d) => { if (!c) setOffres(d); }).catch(() => {});
-    getEvenementsVille(ville.id).then((d) => { if (!c) setEvenements(d); }).catch(() => {});
+    getOffresVille(ville.id).then((d) => { if (!c) setOffres(d); }).catch((err) => console.error('Erreur chargement offres:', err));
+    getEvenementsVille(ville.id).then((d) => { if (!c) setEvenements(d); }).catch((err) => console.error('Erreur chargement événements:', err));
     return () => { c = true; };
   }, [ville.id]);
 

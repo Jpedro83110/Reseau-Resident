@@ -31,7 +31,7 @@ export default function Statistiques() {
         // Inscriptions par mois (6 derniers mois via profiles)
         const sixMonthsAgo = new Date();
         sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
-        const { data: profilesData } = await supabase.from('profiles').select('created_at').eq('ville_id', profil.ville_id).gte('created_at', sixMonthsAgo.toISOString());
+        const { data: profilesData } = await supabase.from('profiles').select('created_at').eq('ville_id', profil.ville_id).gte('created_at', sixMonthsAgo.toISOString()).limit(1000);
         const monthCounts = {};
         (profilesData ?? []).forEach((p) => {
           const d = new Date(p.created_at);

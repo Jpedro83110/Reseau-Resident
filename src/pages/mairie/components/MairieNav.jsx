@@ -2,13 +2,14 @@
 // Navigation partagée pour toutes les pages mairie :
 // sidebar desktop (sticky) + bottom tabs mobile.
 import { Link, useLocation } from 'react-router-dom';
-import { LayoutDashboard, Newspaper, Calendar, Download, Store, Target, BarChart3 } from 'lucide-react';
+import { LayoutDashboard, Newspaper, Calendar, Download, Store, Target, BarChart3, AlertTriangle } from 'lucide-react';
 
 const LIENS = [
   { path: '/mairie',              label: 'Vue d\'ensemble', icon: LayoutDashboard },
   { path: '/mairie/commerces',    label: 'Commerces',       icon: Store },
   { path: '/mairie/actualites',   label: 'Actualités',      icon: Newspaper },
   { path: '/mairie/agenda',       label: 'Agenda',          icon: Calendar },
+  { path: '/mairie/signalements', label: 'Signalements',    icon: AlertTriangle },
   { path: '/mairie/defis',        label: 'Défis',           icon: Target },
   { path: '/mairie/statistiques', label: 'Statistiques',    icon: BarChart3 },
   { path: '/mairie/export',       label: 'Export',          icon: Download },

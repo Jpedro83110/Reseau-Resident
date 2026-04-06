@@ -56,6 +56,7 @@ export default function ParrainageEspace() {
     const url = `${window.location.origin}/inscription-compte?parrain=${codeParrainage}`;
 
     if (navigator.share) {
+      // L'utilisateur peut annuler le partage, erreur normale
       navigator.share({ title: 'Réseaux-Résident', text: texte, url }).catch(() => {});
     } else {
       navigator.clipboard.writeText(`${texte} ${url}`);
@@ -97,7 +98,7 @@ export default function ParrainageEspace() {
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         <div className="bg-white rounded-xl border border-gray-200 p-4 text-center">
           <Users size={18} className="text-vert mx-auto mb-2" />
           <p className="text-2xl font-bold text-texte">{valides}</p>

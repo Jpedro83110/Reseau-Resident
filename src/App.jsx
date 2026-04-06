@@ -44,6 +44,7 @@ const BackOfficeAgenda = lazy(() => import('./pages/mairie/BackOfficeAgenda'));
 const ExportBilans = lazy(() => import('./pages/mairie/ExportBilans'));
 const GestionCommerces = lazy(() => import('./pages/mairie/GestionCommerces'));
 const GestionDefis = lazy(() => import('./pages/mairie/GestionDefis'));
+const GestionSignalements = lazy(() => import('./pages/mairie/GestionSignalements'));
 const Statistiques = lazy(() => import('./pages/mairie/Statistiques'));
 
 // Dashboard admin existant
@@ -214,6 +215,14 @@ export default function App() {
           element={
             <ProtectedRoute roles={['mairie', 'admin']}>
               <W><GestionCommerces /></W>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="mairie/signalements"
+          element={
+            <ProtectedRoute roles={['mairie', 'admin']}>
+              <W><GestionSignalements /></W>
             </ProtectedRoute>
           }
         />

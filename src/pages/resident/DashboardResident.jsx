@@ -2,7 +2,7 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { CreditCard, Store, Tag, MapPin, Building2, ArrowRight, Heart, Newspaper, FolderOpen } from 'lucide-react';
+import { CreditCard, Store, Tag, MapPin, Building2, ArrowRight, Heart, Newspaper, FolderOpen, BarChart3, Users, Clock, AlertTriangle, Settings } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
 import { supabase } from '../../lib/supabase';
 import { CarteDigitale } from '../../components/index';
@@ -14,6 +14,7 @@ import DefisSection from './components/DefisSection';
 import BoutonFavori from '../../components/BoutonFavori';
 import ParrainageEspace from '../../components/ParrainageEspace';
 import ActualitesVille from './components/ActualitesVille';
+import SignalementForm from './components/SignalementForm';
 import { useFavoris } from '../../hooks/useFavoris';
 import usePageMeta from '../../hooks/usePageMeta';
 
@@ -112,6 +113,9 @@ export default function DashboardResident() {
   const [commerces, setCommerces] = useState([]);
   const [offres, setOffres] = useState([]);
   const [ville, setVille] = useState(null);
+  const [historique, setHistorique] = useState([]);
+  const [statsPerso, setStatsPerso] = useState({ visites: 0, commercesVisites: 0, offresUtilisees: 0, filleuls: 0 });
+  const [showSignalement, setShowSignalement] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
 
@@ -180,6 +184,36 @@ export default function DashboardResident() {
             setOffres(offresData ?? []);
           }
         }
+
+        // Historique des utilisations d'offres
+        const { data: historiqueData } = await supabase
+          .from('utilisations_offres')
+          .select('id, date_utilisation, offres(titre, valeur), commerces(nom)')
+          .eq('profile_id', profile.id)
+          .order('date_utilisation', { ascending: false })
+          .limit(10);
+        setHistorique(historiqueData ?? []);
+
+        // Stats personnelles
+        const carteId = carteRes.data?.id;
+        const [visitesRes, commercesDistRes, offresUtilRes, filleulsRes] = await Promise.all([
+          carteId
+            ? supabase.from('visites').select('id', { count: 'exact', head: true }).eq('carte_id', carteId)
+            : Promise.resolve({ count: 0 }),
+          carteId
+            ? supabase.from('visites').select('commerce_id').eq('carte_id', carteId)
+            : Promise.resolve({ data: [] }),
+          supabase.from('utilisations_offres').select('id', { count: 'exact', head: true }).eq('profile_id', profile.id),
+          supabase.from('parrainages').select('id', { count: 'exact', head: true }).eq('parrain_id', profile.id),
+        ]);
+
+        const commercesUniques = new Set((commercesDistRes.data ?? []).map((v) => v.commerce_id)).size;
+        setStatsPerso({
+          visites: visitesRes.count ?? 0,
+          commercesVisites: commercesUniques,
+          offresUtilisees: offresUtilRes.count ?? 0,
+          filleuls: filleulsRes.count ?? 0,
+        });
       } catch (err) {
         setError('Erreur lors du chargement de vos données.');
         console.error('Erreur DashboardResident:', err);
@@ -361,6 +395,43 @@ export default function DashboardResident() {
 
         </div>
 
+        {/* Historique des utilisations d'offres */}
+        <section className="mt-10">
+          <h2 className="font-serif text-xl font-bold text-texte mb-4 flex items-center gap-2">
+            <Clock size={20} className="text-or" />
+            Historique
+          </h2>
+          {historique.length === 0 ? (
+            <div className="bg-white rounded-xl border border-gray-200 p-6 text-center">
+              <Clock size={32} className="text-gray-200 mx-auto mb-3" />
+              <p className="text-gray-400 text-sm">Aucune utilisation d'offre pour le moment.</p>
+            </div>
+          ) : (
+            <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+              <div className="hidden md:grid grid-cols-3 gap-3 px-5 py-3 bg-gray-50 border-b border-gray-100 text-xs font-medium text-gray-500 uppercase tracking-wide">
+                <span>Date</span>
+                <span>Offre</span>
+                <span>Commerce</span>
+              </div>
+              {historique.map((item) => (
+                <div key={item.id} className="grid grid-cols-1 md:grid-cols-3 gap-1 md:gap-3 px-5 py-3 border-b border-gray-50 items-center">
+                  <span className="text-sm text-gray-500">
+                    {new Date(item.date_utilisation).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' })}
+                  </span>
+                  <span className="text-sm font-medium text-texte">
+                    {item.offres?.titre ?? 'Offre inconnue'}
+                    {item.offres?.valeur && <span className="ml-2 text-or font-bold">{item.offres.valeur}</span>}
+                  </span>
+                  <span className="text-sm text-gray-500 flex items-center gap-1">
+                    <Store size={12} className="shrink-0" />
+                    {item.commerces?.nom ?? '—'}
+                  </span>
+                </div>
+              ))}
+            </div>
+          )}
+        </section>
+
         {/* Section actualités */}
         {profile?.ville_id && (
           <section className="mt-10">
@@ -392,12 +463,86 @@ export default function DashboardResident() {
           </section>
         )}
 
+        {/* Mes statistiques */}
+        <section className="mt-10">
+          <h2 className="font-serif text-xl font-bold text-texte mb-4 flex items-center gap-2">
+            <BarChart3 size={20} className="text-bleu" />
+            Mes statistiques
+          </h2>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+            <div className="bg-white rounded-xl border border-gray-200 p-4">
+              <Store size={18} className="text-bleu mb-2" />
+              <div className="text-2xl font-bold text-texte">{statsPerso.visites}</div>
+              <div className="text-xs text-gray-500">Visites totales</div>
+            </div>
+            <div className="bg-white rounded-xl border border-gray-200 p-4">
+              <MapPin size={18} className="text-or mb-2" />
+              <div className="text-2xl font-bold text-texte">{statsPerso.commercesVisites}</div>
+              <div className="text-xs text-gray-500">Commerces visités</div>
+            </div>
+            <div className="bg-white rounded-xl border border-gray-200 p-4">
+              <Tag size={18} className="text-vert mb-2" />
+              <div className="text-2xl font-bold text-texte">{statsPerso.offresUtilisees}</div>
+              <div className="text-xs text-gray-500">Offres utilisées</div>
+            </div>
+            <div className="bg-white rounded-xl border border-gray-200 p-4">
+              <Users size={18} className="text-bleu mb-2" />
+              <div className="text-2xl font-bold text-texte">{statsPerso.filleuls}</div>
+              <div className="text-xs text-gray-500">Filleuls</div>
+            </div>
+          </div>
+        </section>
+
         {/* Section parrainage */}
         <div className="mt-10">
           <ParrainageEspace />
         </div>
 
+        {/* Actions rapides */}
+        <div className="mt-10 flex flex-col sm:flex-row gap-3">
+          <Link
+            to="/parametres"
+            className="flex items-center justify-center gap-2 px-5 py-3 text-sm font-medium border border-gray-300 rounded-xl hover:bg-gray-50 transition-colors"
+          >
+            <Settings size={16} />
+            Modifier mon profil
+          </Link>
+          {profile?.ville_id && (
+            <button
+              onClick={() => setShowSignalement(true)}
+              className="flex items-center justify-center gap-2 px-5 py-3 text-sm font-medium border border-orange-300 text-orange-600 rounded-xl hover:bg-orange-50 transition-colors"
+            >
+              <AlertTriangle size={16} />
+              Signaler un problème
+            </button>
+          )}
+        </div>
+
       </div>
+
+      {/* Modal signalement */}
+      {showSignalement && profile?.ville_id && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4" onClick={() => setShowSignalement(false)}>
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-lg max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+            <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
+              <h3 className="font-semibold text-texte flex items-center gap-2">
+                <AlertTriangle size={16} className="text-orange-500" />
+                Signaler un problème
+              </h3>
+              <button onClick={() => setShowSignalement(false)} className="p-1.5 text-gray-400 hover:text-gray-600" aria-label="Fermer">
+                <span className="text-xl leading-none">&times;</span>
+              </button>
+            </div>
+            <div className="p-6">
+              <SignalementForm
+                villeId={profile.ville_id}
+                profileId={profile.id}
+                onSuccess={() => setShowSignalement(false)}
+              />
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

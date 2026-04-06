@@ -55,7 +55,7 @@ export default function Rejoindre() {
   });
 
   useEffect(() => {
-    getVilles().then(setVillesPartenaires).catch(() => {});
+    getVilles().then(setVillesPartenaires).catch((err) => console.error('Erreur chargement villes:', err));
   }, []);
 
   function handleChange(e) {
@@ -242,7 +242,7 @@ export default function Rejoindre() {
               {step === 2 && (
                 <div className="space-y-5">
                   <h2 className="font-serif text-xl font-bold text-texte flex items-center gap-2"><Mail size={20} className="text-bleu" /> Contact & Compte</h2>
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
                       <label className="block text-sm font-bold text-gray-700 mb-2">Prénom *</label>
                       <input name="prenom" value={form.prenom} onChange={handleChange} className={inputClass} required />
@@ -260,7 +260,7 @@ export default function Rejoindre() {
                     <label className="block text-sm font-bold text-gray-700 mb-2">Téléphone *</label>
                     <input name="telephone" type="tel" value={form.telephone} onChange={handleChange} className={inputClass} required placeholder="04 94 00 00 00" />
                   </div>
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
                       <label className="block text-sm font-bold text-gray-700 mb-2"><Lock size={14} className="inline mr-1" />Mot de passe *</label>
                       <input name="password" type="password" value={form.password} onChange={handleChange} className={inputClass} required placeholder="6 car. minimum" />

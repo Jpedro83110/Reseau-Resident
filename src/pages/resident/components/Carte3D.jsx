@@ -16,8 +16,8 @@ export default function Carte3D({ ville, numero, expiration, prenom, nom, formul
     const scanUrl = `${window.location.origin}/scan?token=${qrToken}`;
     import('qrcode').then((QRCode) => {
       QRCode.toDataURL(scanUrl, { width: 280, margin: 2, color: { dark: '#1a3a5c', light: '#ffffff' } })
-        .then(setQrDataUri).catch(() => {});
-    }).catch(() => {});
+        .then(setQrDataUri).catch((err) => console.error('Erreur génération QR:', err));
+    }).catch((err) => console.error('Erreur import QRCode:', err));
   }, [qrToken]);
 
   const handleMove = useCallback((clientX, clientY) => {

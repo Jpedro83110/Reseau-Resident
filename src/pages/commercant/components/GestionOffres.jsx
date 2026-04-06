@@ -115,7 +115,7 @@ export default function GestionOffres({ commerceId, categorie }) {
                   className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm" />
                 <textarea value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} placeholder="Description (optionnel)" rows={2}
                   className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm resize-none" />
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <select value={form.type} onChange={(e) => setForm({ ...form, type: e.target.value })} className="border border-gray-200 rounded-lg px-3 py-2 text-sm bg-white">
                     {TYPES.map((t) => <option key={t.value} value={t.value}>{t.label}</option>)}
                   </select>

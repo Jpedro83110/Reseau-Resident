@@ -18,7 +18,7 @@ export default function InscriptionCompte() {
   useEffect(() => {
     supabase.from('villes').select('id, nom').eq('statut', 'actif')
       .then(({ data }) => setVilles(data || []))
-      .catch(() => {});
+      .catch((err) => console.error('Erreur chargement villes:', err));
   }, []);
 
   const handleChange = (e) => {
@@ -111,7 +111,7 @@ export default function InscriptionCompte() {
 
           {!success && (
             <form onSubmit={handleSubmit} className="space-y-4">
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <label htmlFor="prenom" className="block text-sm font-bold text-gray-700 mb-2">Prénom *</label>
                   <input id="prenom" name="prenom" type="text" required value={form.prenom} onChange={handleChange} className={inputClass} />
@@ -125,7 +125,7 @@ export default function InscriptionCompte() {
                 <label htmlFor="email" className="block text-sm font-bold text-gray-700 mb-2">Email *</label>
                 <input id="email" name="email" type="email" required value={form.email} onChange={handleChange} className={inputClass} placeholder="votre@email.fr" />
               </div>
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <label htmlFor="password" className="block text-sm font-bold text-gray-700 mb-2">Mot de passe *</label>
                   <input id="password" name="password" type="password" required value={form.password} onChange={handleChange} className={inputClass} placeholder="6 car. minimum" />

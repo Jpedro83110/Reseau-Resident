@@ -136,7 +136,7 @@ export default function Parametres() {
             <User size={18} className="text-bleu" /> Informations personnelles
           </h2>
           <form onSubmit={handleSave} className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-bold text-gray-700 mb-2">Prénom</label>
                 <input name="prenom" value={form.prenom} onChange={handleChange} className={inputClass} />
@@ -168,7 +168,7 @@ export default function Parametres() {
             <Lock size={18} className="text-bleu" /> Modifier le mot de passe
           </h2>
           <form onSubmit={handlePasswordChange} className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-bold text-gray-700 mb-2">Nouveau mot de passe</label>
                 <input type="password" value={passwordForm.newPassword}

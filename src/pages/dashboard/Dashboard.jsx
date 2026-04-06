@@ -1,10 +1,22 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, lazy, Suspense } from 'react';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
-import { Download, Users, Store, MapPin, Euro, Lock, XCircle, Clock, CheckCircle2, Trophy, LogOut } from 'lucide-react';
+import { Download, Users, Store, MapPin, Euro, Lock, XCircle, Clock, CheckCircle2, Trophy, LogOut, Settings, BarChart3 } from 'lucide-react';
 import { getVilles, getAdminDashboard, getStatsMensuelles, getTopClients, getDemandesEnAttente, signInAdmin, signOutAdmin } from '../../lib/api';
 import { supabase } from '../../lib/supabase';
 import usePageMeta from '../../hooks/usePageMeta';
 import { trackEvent } from '../../lib/analytics';
+
+// Onglets lazy-loadés
+const GestionUtilisateurs = lazy(() => import('./GestionUtilisateurs'));
+const ParametresPlateforme = lazy(() => import('./ParametresPlateforme'));
+
+function TabLoader() {
+  return (
+    <div className="flex justify-center py-16">
+      <div className="w-8 h-8 border-4 border-gray-200 border-t-bleu rounded-full animate-spin" />
+    </div>
+  );
+}
 
 const SOURCE_LABELS = { qr: 'QR Code', code_mensuel: 'Code mensuel', carnet: 'Carnet', telephone: 'Téléphone', nfc: 'NFC', admin: 'Admin' };
 
@@ -189,8 +201,16 @@ function ClassementClients({ villeId }) {
   );
 }
 
+// ── Onglets de navigation admin ──────────────────────────────
+const TABS = [
+  { id: 'overview', label: 'Vue d\'ensemble', icon: BarChart3 },
+  { id: 'utilisateurs', label: 'Utilisateurs', icon: Users },
+  { id: 'parametres', label: 'Paramètres', icon: Settings },
+];
+
 // ── Dashboard content ────────────────────────────────────────
 function DashboardContent({ onLogout }) {
+  const [activeTab, setActiveTab] = useState('overview');
   const [villesList, setVillesList] = useState([]);
   const [selectedVille, setSelectedVille] = useState('');
   const [dashboard, setDashboard] = useState(null);
@@ -214,12 +234,13 @@ function DashboardContent({ onLogout }) {
     if (!selectedVille) { setLoading(false); return; }
     let c = false;
     setLoading(true);
+    const villeObj = villesList.find((x) => x.slug === selectedVille);
     Promise.all([
       getAdminDashboard(selectedVille).catch(() => null),
-      getVilles().then((v) => { const ville = v.find((x) => x.slug === selectedVille); return ville ? getStatsMensuelles(ville.id) : []; }).catch(() => []),
+      villeObj ? getStatsMensuelles(villeObj.id).catch(() => []) : Promise.resolve([]),
     ]).then(([dash, s]) => { if (!c) { setDashboard(dash); setStats(s); setLoading(false); } });
     return () => { c = true; };
-  }, [selectedVille, refreshKey]);
+  }, [selectedVille, refreshKey, villesList]);
 
   const ville = dashboard?.ville;
   const commerces = dashboard?.commerces ?? [];
@@ -251,131 +272,168 @@ function DashboardContent({ onLogout }) {
             <h1 className="font-serif text-4xl font-bold text-texte">Tableau de bord</h1>
           </div>
           <div className="flex items-center gap-3">
-            {villesList.length > 0 && (
+            {activeTab === 'overview' && villesList.length > 0 && (
               <select value={selectedVille} onChange={(e) => setSelectedVille(e.target.value)}
                 className="px-4 py-2.5 rounded-xl border border-gray-200 bg-white font-medium focus:border-or outline-none">
                 {villesList.map((v) => <option key={v.slug} value={v.slug}>{v.nom}</option>)}
               </select>
             )}
-            <button onClick={exportCSV} className="flex items-center gap-2 px-4 py-2.5 bg-bleu text-white rounded-xl font-medium hover:bg-bleu-clair transition-colors">
-              <Download size={18} /> CSV
-            </button>
+            {activeTab === 'overview' && (
+              <button onClick={exportCSV} className="flex items-center gap-2 px-4 py-2.5 bg-bleu text-white rounded-xl font-medium hover:bg-bleu-clair transition-colors">
+                <Download size={18} /> CSV
+              </button>
+            )}
             <button onClick={onLogout} className="flex items-center gap-2 px-4 py-2.5 bg-gray-100 text-gray-600 rounded-xl font-medium hover:bg-red-50 hover:text-red-500 transition-colors">
               <LogOut size={18} />
             </button>
           </div>
         </div>
 
-        {loading ? (
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-8">
-            {[1,2,3,4,5,6].map(i => <div key={i} className="h-24 bg-white rounded-2xl animate-pulse" />)}
-          </div>
-        ) : (
+        {/* Onglets de navigation */}
+        <div className="flex gap-1 mb-8 overflow-x-auto pb-1">
+          {TABS.map((tab) => {
+            const Icon = tab.icon;
+            const isActive = activeTab === tab.id;
+            return (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id)}
+                className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium whitespace-nowrap transition-colors ${
+                  isActive
+                    ? 'bg-bleu text-white shadow-sm'
+                    : 'bg-white text-gray-600 border border-gray-200 hover:bg-gray-50'
+                }`}
+              >
+                <Icon size={16} />
+                {tab.label}
+              </button>
+            );
+          })}
+        </div>
+
+        {/* Contenu de l'onglet actif */}
+        {activeTab === 'overview' && (
           <>
-            {/* KPIs */}
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-8">
-              {kpis.map((kpi, i) => (
-                <div key={i} className="bg-white rounded-2xl p-4 border border-gray-100 shadow-sm">
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-gray-500 font-medium text-xs uppercase tracking-wider">{kpi.label}</span>
-                    <div className={kpi.color}>{kpi.icon}</div>
+            {loading ? (
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-8">
+                {[1,2,3,4,5,6].map(i => <div key={i} className="h-24 bg-white rounded-2xl animate-pulse" />)}
+              </div>
+            ) : (
+              <>
+                {/* KPIs */}
+                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-8">
+                  {kpis.map((kpi, i) => (
+                    <div key={i} className="bg-white rounded-2xl p-4 border border-gray-100 shadow-sm">
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="text-gray-500 font-medium text-xs uppercase tracking-wider">{kpi.label}</span>
+                        <div className={kpi.color}>{kpi.icon}</div>
+                      </div>
+                      <div className="font-serif text-2xl font-bold text-texte">
+                        {typeof kpi.value === 'number' ? kpi.value.toLocaleString('fr-FR') : kpi.value}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Demandes */}
+                <div className="bg-white rounded-3xl p-8 border border-gray-100 shadow-sm mb-8">
+                  <h3 className="font-serif text-xl font-bold text-texte mb-6 flex items-center gap-2">
+                    <Clock size={20} className="text-orange-500" /> Demandes en attente
+                  </h3>
+                  <DemandesCommerces selectedVille={selectedVille} />
+                </div>
+
+                {/* Graphique + Sources */}
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
+                  <div className="bg-white rounded-3xl p-8 border border-gray-100 shadow-sm lg:col-span-2">
+                    <h3 className="font-serif text-xl font-bold text-texte mb-6">Évolution des visites</h3>
+                    {stats.length > 0 ? (
+                      <div className="h-64">
+                        <ResponsiveContainer width="100%" height="100%">
+                          <AreaChart data={stats} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                            <defs><linearGradient id="gV" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor="#c8963e" stopOpacity={0.25} /><stop offset="95%" stopColor="#c8963e" stopOpacity={0} /></linearGradient></defs>
+                            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f0f0f0" />
+                            <XAxis dataKey="mois" axisLine={false} tickLine={false} tick={{ fill: '#6b7280', fontSize: 12 }} />
+                            <YAxis axisLine={false} tickLine={false} tick={{ fill: '#6b7280', fontSize: 12 }} />
+                            <Tooltip contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 20px rgba(0,0,0,0.1)' }} formatter={(v) => [`${v} visites`, '']} />
+                            <Area type="monotone" dataKey="visites" stroke="#c8963e" strokeWidth={3} fillOpacity={1} fill="url(#gV)" />
+                          </AreaChart>
+                        </ResponsiveContainer>
+                      </div>
+                    ) : <div className="h-64 flex items-center justify-center text-gray-400">Pas encore de données.</div>}
                   </div>
-                  <div className="font-serif text-2xl font-bold text-texte">
-                    {typeof kpi.value === 'number' ? kpi.value.toLocaleString('fr-FR') : kpi.value}
+                  <div className="bg-white rounded-3xl p-8 border border-gray-100 shadow-sm">
+                    <h3 className="font-serif text-xl font-bold text-texte mb-6">Sources</h3>
+                    {visitesParSource.length > 0 ? (
+                      <div className="space-y-4">
+                        {visitesParSource.map((v, i) => (
+                          <div key={i} className="flex items-center justify-between">
+                            <span className="text-sm font-medium text-gray-600">{SOURCE_LABELS[v.source] || v.source}</span>
+                            <span className="font-bold text-bleu">{v.count}</span>
+                          </div>
+                        ))}
+                      </div>
+                    ) : <div className="flex items-center justify-center h-40 text-gray-400">Pas de données.</div>}
                   </div>
                 </div>
-              ))}
-            </div>
 
-            {/* Demandes */}
-            <div className="bg-white rounded-3xl p-8 border border-gray-100 shadow-sm mb-8">
-              <h3 className="font-serif text-xl font-bold text-texte mb-6 flex items-center gap-2">
-                <Clock size={20} className="text-orange-500" /> Demandes en attente
-              </h3>
-              <DemandesCommerces selectedVille={selectedVille} />
-            </div>
-
-            {/* Graphique + Sources */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
-              <div className="bg-white rounded-3xl p-8 border border-gray-100 shadow-sm lg:col-span-2">
-                <h3 className="font-serif text-xl font-bold text-texte mb-6">Évolution des visites</h3>
-                {stats.length > 0 ? (
-                  <div className="h-64">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <AreaChart data={stats} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-                        <defs><linearGradient id="gV" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor="#c8963e" stopOpacity={0.25} /><stop offset="95%" stopColor="#c8963e" stopOpacity={0} /></linearGradient></defs>
-                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f0f0f0" />
-                        <XAxis dataKey="mois" axisLine={false} tickLine={false} tick={{ fill: '#6b7280', fontSize: 12 }} />
-                        <YAxis axisLine={false} tickLine={false} tick={{ fill: '#6b7280', fontSize: 12 }} />
-                        <Tooltip contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 20px rgba(0,0,0,0.1)' }} formatter={(v) => [`${v} visites`, '']} />
-                        <Area type="monotone" dataKey="visites" stroke="#c8963e" strokeWidth={3} fillOpacity={1} fill="url(#gV)" />
-                      </AreaChart>
-                    </ResponsiveContainer>
+                {/* Classement */}
+                <div className="bg-white rounded-3xl border border-gray-100 shadow-sm mb-8 overflow-hidden">
+                  <div className="p-6 border-b border-gray-100 flex items-center gap-2">
+                    <Trophy size={20} className="text-or" />
+                    <h3 className="font-serif text-xl font-bold text-texte">Résidents les plus actifs</h3>
                   </div>
-                ) : <div className="h-64 flex items-center justify-center text-gray-400">Pas encore de données.</div>}
-              </div>
-              <div className="bg-white rounded-3xl p-8 border border-gray-100 shadow-sm">
-                <h3 className="font-serif text-xl font-bold text-texte mb-6">Sources</h3>
-                {visitesParSource.length > 0 ? (
-                  <div className="space-y-4">
-                    {visitesParSource.map((v, i) => (
-                      <div key={i} className="flex items-center justify-between">
-                        <span className="text-sm font-medium text-gray-600">{SOURCE_LABELS[v.source] || v.source}</span>
-                        <span className="font-bold text-bleu">{v.count}</span>
-                      </div>
-                    ))}
+                  <div className="p-6"><ClassementClients villeId={ville?.id} /></div>
+                </div>
+
+                {/* Commerces */}
+                <div className="bg-white rounded-3xl border border-gray-100 shadow-sm overflow-hidden mb-8">
+                  <div className="p-6 border-b border-gray-100">
+                    <h3 className="font-serif text-xl font-bold text-texte">Visites par commerce</h3>
                   </div>
-                ) : <div className="flex items-center justify-center h-40 text-gray-400">Pas de données.</div>}
-              </div>
-            </div>
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-left">
+                      <thead><tr className="bg-gray-50 text-gray-500 text-xs uppercase tracking-wider">
+                        <th className="p-4">Commerce</th><th className="p-4">Catégorie</th>
+                        <th className="p-4 hidden md:table-cell">Avantage</th><th className="p-4 text-center">Statut</th><th className="p-4 text-right">Visites</th>
+                      </tr></thead>
+                      <tbody className="divide-y divide-gray-50">
+                        {sorted.length === 0 ? <tr><td colSpan={5} className="p-8 text-center text-gray-400">Aucun commerce.</td></tr> :
+                        sorted.map((c) => (
+                          <tr key={c.id} className="hover:bg-gray-50">
+                            <td className="p-4 font-bold text-texte">{c.nom}</td>
+                            <td className="p-4"><span className="px-2 py-1 bg-gray-100 rounded text-xs font-medium">{c.categorie}</span></td>
+                            <td className="p-4 text-gray-500 text-sm hidden md:table-cell">{c.avantage}</td>
+                            <td className="p-4 text-center"><span className={`px-2 py-1 rounded-full text-xs font-bold ${c.actif ? 'bg-green-100 text-vert' : 'bg-red-100 text-red-500'}`}>{c.actif ? 'Actif' : 'Retiré'}</span></td>
+                            <td className="p-4 text-right font-bold text-bleu">{(c.visites ?? 0).toLocaleString('fr-FR')}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
 
-            {/* Classement */}
-            <div className="bg-white rounded-3xl border border-gray-100 shadow-sm mb-8 overflow-hidden">
-              <div className="p-6 border-b border-gray-100 flex items-center gap-2">
-                <Trophy size={20} className="text-or" />
-                <h3 className="font-serif text-xl font-bold text-texte">Résidents les plus actifs</h3>
-              </div>
-              <div className="p-6"><ClassementClients villeId={ville?.id} /></div>
-            </div>
+                {/* Demandes mairie en attente */}
+                <DemandesMairie />
 
-            {/* Commerces */}
-            <div className="bg-white rounded-3xl border border-gray-100 shadow-sm overflow-hidden">
-              <div className="p-6 border-b border-gray-100">
-                <h3 className="font-serif text-xl font-bold text-texte">Visites par commerce</h3>
-              </div>
-              <div className="overflow-x-auto">
-                <table className="w-full text-left">
-                  <thead><tr className="bg-gray-50 text-gray-500 text-xs uppercase tracking-wider">
-                    <th className="p-4">Commerce</th><th className="p-4">Catégorie</th>
-                    <th className="p-4 hidden md:table-cell">Avantage</th><th className="p-4 text-center">Statut</th><th className="p-4 text-right">Visites</th>
-                  </tr></thead>
-                  <tbody className="divide-y divide-gray-50">
-                    {sorted.length === 0 ? <tr><td colSpan={5} className="p-8 text-center text-gray-400">Aucun commerce.</td></tr> :
-                    sorted.map((c) => (
-                      <tr key={c.id} className="hover:bg-gray-50">
-                        <td className="p-4 font-bold text-texte">{c.nom}</td>
-                        <td className="p-4"><span className="px-2 py-1 bg-gray-100 rounded text-xs font-medium">{c.categorie}</span></td>
-                        <td className="p-4 text-gray-500 text-sm hidden md:table-cell">{c.avantage}</td>
-                        <td className="p-4 text-center"><span className={`px-2 py-1 rounded-full text-xs font-bold ${c.actif ? 'bg-green-100 text-vert' : 'bg-red-100 text-red-500'}`}>{c.actif ? 'Actif' : 'Retiré'}</span></td>
-                        <td className="p-4 text-right font-bold text-bleu">{(c.visites ?? 0).toLocaleString('fr-FR')}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </div>
+                {/* Attribution rôle Mairie */}
+                <AttributionRoleMairie />
+              </>
+            )}
           </>
         )}
-      </div>
 
-      {/* ── Demandes mairie en attente ── */}
-      <div className="max-w-7xl mx-auto px-4 py-8">
-        <DemandesMairie />
-      </div>
+        {activeTab === 'utilisateurs' && (
+          <Suspense fallback={<TabLoader />}>
+            <GestionUtilisateurs />
+          </Suspense>
+        )}
 
-      {/* ── Attribution rôle Mairie ── */}
-      <div className="max-w-7xl mx-auto px-4 py-8">
-        <AttributionRoleMairie />
+        {activeTab === 'parametres' && (
+          <Suspense fallback={<TabLoader />}>
+            <ParametresPlateforme />
+          </Suspense>
+        )}
       </div>
     </div>
   );
@@ -387,9 +445,9 @@ function DemandesMairie() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    supabase.from('mairies_inscrites').select('*').eq('statut', 'en_attente').order('created_at', { ascending: false })
+    supabase.from('mairies_inscrites').select('id, nom_commune, code_postal, departement, nom_responsable, prenom_responsable, fonction, email, telephone, statut, ville_id, created_at').eq('statut', 'en_attente').order('created_at', { ascending: false })
       .then(({ data }) => { setDemandes(data ?? []); setLoading(false); })
-      .catch(() => setLoading(false));
+      .catch((err) => { console.error('Erreur chargement demandes mairie:', err); setLoading(false); });
   }, []);
 
   async function valider(demande) {
@@ -482,7 +540,7 @@ function AttributionRoleMairie() {
   const [result, setResult] = useState(null);
 
   useEffect(() => {
-    getVilles().then(setVilles).catch(() => {});
+    getVilles().then(setVilles).catch((err) => console.error('Erreur chargement villes:', err));
   }, []);
 
   async function handleSubmit(e) {

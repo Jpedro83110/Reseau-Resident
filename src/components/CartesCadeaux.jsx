@@ -13,7 +13,7 @@ export default function CartesCadeaux() {
           Faites découvrir les commerces de votre ville à un ami, un voisin ou un membre de votre famille en lui offrant une Réseaux-Résident.
         </p>
         <div className="bg-white rounded-3xl p-8 md:p-10 border border-gray-100 shadow-sm max-w-xl mx-auto mb-10">
-          <div className="grid grid-cols-3 gap-4 mb-8">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
             {[
               { formule: 'individuel', nom: 'Individuel', prix: '10€', label: '1 carte' },
               { formule: 'couple', nom: 'Couple', prix: '15€', label: '2 cartes' },

@@ -25,7 +25,7 @@ const STATUTS = {
 };
 
 // ── Modal formulaire ─────────────────────────────────────────
-function ModalEvenement({ evt, villeId, onClose, onSaved }) {
+function ModalEvenement({ evt, villeId, villeSlug, onClose, onSaved }) {
   const isEdition = !!evt;
   const [form, setForm] = useState({
     titre: evt?.titre ?? '',
@@ -112,6 +112,30 @@ function ModalEvenement({ evt, villeId, onClose, onSaved }) {
           organisateur_id: villeId,
         });
         if (error) throw error;
+
+        // Notifier tous les résidents de la ville si l'événement est publié
+        if (form.statut === 'publie') {
+          try {
+            const { data: residents } = await supabase
+              .from('profiles')
+              .select('id')
+              .eq('ville_id', villeId);
+
+            if (residents?.length) {
+              const notifications = residents.map((r) => ({
+                destinataire_id: r.id,
+                titre: `Nouvel événement : ${form.titre.trim()}`,
+                message: `${form.titre.trim()} le ${new Date(dateDebut).toLocaleDateString('fr-FR')}`,
+                type: 'evenement',
+                lien: villeSlug ? `/villes/${villeSlug}/evenements` : null,
+              }));
+              await supabase.from('notifications').insert(notifications);
+            }
+          } catch (notifErr) {
+            // Ne pas bloquer la création si les notifications échouent
+            console.error('Erreur envoi notifications:', notifErr);
+          }
+        }
       }
 
       onSaved();
@@ -160,7 +184,7 @@ function ModalEvenement({ evt, villeId, onClose, onSaved }) {
           </div>
 
           {/* Dates */}
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="block text-xs font-medium text-gray-600 mb-1">Date début *</label>
               <input type="date" className={inputClass} value={form.date_debut}
@@ -179,7 +203,7 @@ function ModalEvenement({ evt, villeId, onClose, onSaved }) {
           </div>
 
           {/* Lieu + adresse */}
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="block text-xs font-medium text-gray-600 mb-1">Lieu</label>
               <input type="text" className={inputClass} value={form.lieu}
@@ -195,7 +219,7 @@ function ModalEvenement({ evt, villeId, onClose, onSaved }) {
           </div>
 
           {/* Catégorie + statut */}
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="block text-xs font-medium text-gray-600 mb-1">Catégorie</label>
               <select className={inputClass} value={form.categorie}
@@ -389,7 +413,7 @@ export default function BackOfficeAgenda() {
         setIsLoading(true);
         const { data: profil } = await supabase.from('mairie_profiles').select('ville_id').eq('id', user.id).maybeSingle();
         if (!profil?.ville_id) { setError('Aucune ville associée.'); return; }
-        const { data: v } = await supabase.from('villes').select('id, nom').eq('id', profil.ville_id).maybeSingle();
+        const { data: v } = await supabase.from('villes').select('id, nom, slug').eq('id', profil.ville_id).maybeSingle();
         if (!v) { setError('Ville introuvable.'); return; }
         setVille(v);
         await chargerEvenements(v.id);
@@ -571,6 +595,7 @@ export default function BackOfficeAgenda() {
           <ModalEvenement
             evt={modalEvt}
             villeId={ville.id}
+            villeSlug={ville.slug}
             onClose={() => setModalEvt(undefined)}
             onSaved={() => chargerEvenements(ville.id)}
           />

@@ -14,3 +14,5 @@ export { default as BoutonFavori } from './BoutonFavori';
 export { default as ActualiteCard } from './ActualiteCard';
 export { default as NotificationsPanel } from './NotificationsPanel';
 export { default as ParrainageEspace } from './ParrainageEspace';
+export { default as BrandingVille } from './BrandingVille';
+export { default as Pagination } from './Pagination';

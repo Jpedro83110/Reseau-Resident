@@ -9,7 +9,7 @@ const AuthContext = createContext(null);
 
 async function detecterRoles(userId, setProfile, setRoles, setVilleTheme) {
   const resultats = await Promise.allSettled([
-    supabase.from('profiles').select('*').eq('id', userId).maybeSingle(),
+    supabase.from('profiles').select('id, ville_id, prenom, nom, email, telephone, adresse, points, niveau, code_parrainage, avatar_url, created_at').eq('id', userId).maybeSingle(),
     supabase.from('commercant_profiles').select('id, commerce_id, role').eq('id', userId).maybeSingle(),
     supabase.from('association_profiles').select('id, association_id, role').eq('id', userId).maybeSingle(),
     supabase.from('mairie_profiles').select('id, ville_id, role').eq('id', userId).maybeSingle(),

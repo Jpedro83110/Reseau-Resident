@@ -220,7 +220,7 @@ export default function DashboardAssociation() {
           return;
         }
 
-        // 2. Données association + projets + soutiens en parallèle
+        // 2. Données association + projets + soutiens en parallèle (JOIN pour éviter cascade)
         const [assoRes, projetsRes, soutiensRes] = await Promise.all([
           supabase
             .from('associations')
@@ -234,11 +234,8 @@ export default function DashboardAssociation() {
             .order('created_at', { ascending: false }),
           supabase
             .from('soutiens')
-            .select('id, montant, projet_id')
-            .in('projet_id',
-              // sous-requête simplifiée : on filtrera côté client
-              (await supabase.from('projets').select('id').eq('association_id', profil.association_id)).data?.map((p) => p.id) ?? []
-            ),
+            .select('id, montant, projet_id, projets!inner(association_id)')
+            .eq('projets.association_id', profil.association_id),
         ]);
 
         if (assoRes.error) throw assoRes.error;

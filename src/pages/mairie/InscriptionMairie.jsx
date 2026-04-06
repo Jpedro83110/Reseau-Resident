@@ -231,7 +231,7 @@ export default function InscriptionMairie() {
               {step === 1 && (
                 <div className="space-y-5">
                   <h2 className="font-serif text-xl font-bold text-texte flex items-center gap-2"><Building2 size={20} className="text-bleu" /> Votre commune</h2>
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div className="col-span-2 sm:col-span-1">
                       <label className="block text-sm font-bold text-gray-700 mb-2">Nom de la commune *</label>
                       <input name="nomCommune" value={form.nomCommune} onChange={handleChange} className={inputClass} required placeholder="Ex: Sanary-sur-Mer" />
@@ -241,7 +241,7 @@ export default function InscriptionMairie() {
                       <input name="codePostal" value={form.codePostal} onChange={handleChange} className={inputClass} required maxLength={5} placeholder="83110" />
                     </div>
                   </div>
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
                       <label className="block text-sm font-bold text-gray-700 mb-2">Département</label>
                       <input name="departement" value={form.departement} onChange={handleChange} className={inputClass} placeholder="Var" />
@@ -282,7 +282,7 @@ export default function InscriptionMairie() {
               {step === 2 && (
                 <div className="space-y-5">
                   <h2 className="font-serif text-xl font-bold text-texte flex items-center gap-2"><User size={20} className="text-bleu" /> Responsable & Compte</h2>
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
                       <label className="block text-sm font-bold text-gray-700 mb-2">Prénom *</label>
                       <input name="prenom" value={form.prenom} onChange={handleChange} className={inputClass} required />
@@ -299,7 +299,7 @@ export default function InscriptionMairie() {
                       {FONCTIONS.map((f) => <option key={f} value={f}>{f}</option>)}
                     </select>
                   </div>
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
                       <label className="block text-sm font-bold text-gray-700 mb-2">Email professionnel *</label>
                       <input name="email" type="email" value={form.email} onChange={handleChange} className={inputClass} required placeholder="contact@mairie.fr" />
@@ -309,7 +309,7 @@ export default function InscriptionMairie() {
                       <input name="telephone" type="tel" value={form.telephone} onChange={handleChange} className={inputClass} placeholder="04 94 ..." />
                     </div>
                   </div>
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
                       <label className="block text-sm font-bold text-gray-700 mb-2"><Lock size={14} className="inline mr-1" />Mot de passe *</label>
                       <input name="password" type="password" value={form.password} onChange={handleChange} className={inputClass} required placeholder="6 car. minimum" />
