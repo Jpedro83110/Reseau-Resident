@@ -1,7 +1,7 @@
 // src/pages/mairie/GestionDefis.jsx
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Target, Plus, X, Users, Zap } from 'lucide-react';
+import { Target, Plus, X, Users, Zap, Pencil, Archive } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
 import { supabase } from '../../lib/supabase';
 import MairieNav from './components/MairieNav';
@@ -34,6 +34,7 @@ export default function GestionDefis() {
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState({ titre: '', description: '', type: 'exploration', points_recompense: 20, objectif_description: '', objectif_nombre: 1, date_fin: '' });
   const [saving, setSaving] = useState(false);
+  const [editingId, setEditingId] = useState(null);
 
   useEffect(() => {
     if (!user) { setIsLoading(false); return; }
@@ -80,6 +81,41 @@ export default function GestionDefis() {
     }
   }
 
+  function startEdit(d) {
+    setForm({
+      titre: d.titre, description: d.description || '', type: d.type || 'exploration',
+      points_recompense: d.points_recompense || 20, objectif_description: d.objectif_description || '',
+      objectif_nombre: d.objectif_nombre || 1, date_fin: d.date_fin ? d.date_fin.slice(0, 10) : '',
+    });
+    setEditingId(d.id);
+    setShowForm(true);
+  }
+
+  async function handleUpdate(e) {
+    e.preventDefault();
+    if (!editingId || !form.titre) return;
+    setSaving(true);
+    const { data, error } = await supabase.from('defis').update({
+      titre: form.titre, description: form.description, type: form.type,
+      points_recompense: form.points_recompense, objectif_description: form.objectif_description || form.titre,
+      objectif_nombre: form.objectif_nombre, date_fin: form.date_fin || null,
+    }).eq('id', editingId).select().single();
+    setSaving(false);
+    if (!error && data) {
+      setDefis((prev) => prev.map((d) => d.id === editingId ? data : d));
+      setEditingId(null);
+      setShowForm(false);
+      setForm({ titre: '', description: '', type: 'exploration', points_recompense: 20, objectif_description: '', objectif_nombre: 1, date_fin: '' });
+    }
+  }
+
+  async function handleArchive(id) {
+    const { error } = await supabase.from('defis').update({ actif: false }).eq('id', id);
+    if (!error) {
+      setDefis((prev) => prev.map((d) => d.id === id ? { ...d, actif: false } : d));
+    }
+  }
+
   if (isLoading) return <div className="min-h-screen pt-28 bg-creme flex items-center justify-center"><div className="w-8 h-8 border-4 border-bleu border-t-transparent rounded-full animate-spin" /></div>;
 
   return (
@@ -116,10 +152,10 @@ export default function GestionDefis() {
                 <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }} className="overflow-hidden mb-6">
                   <div className="bg-white rounded-xl border border-gray-200 p-6">
                     <div className="flex justify-between items-center mb-4">
-                      <h2 className="font-semibold text-texte">Nouveau défi</h2>
-                      <button onClick={() => setShowForm(false)} className="p-1 text-gray-400 hover:text-gray-600"><X size={18} /></button>
+                      <h2 className="font-semibold text-texte">{editingId ? 'Modifier le défi' : 'Nouveau défi'}</h2>
+                      <button onClick={() => { setShowForm(false); setEditingId(null); }} className="p-1 text-gray-400 hover:text-gray-600"><X size={18} /></button>
                     </div>
-                    <form onSubmit={handleSubmit} className="space-y-4">
+                    <form onSubmit={editingId ? handleUpdate : handleSubmit} className="space-y-4">
                       <input type="text" value={form.titre} onChange={(e) => setForm({ ...form, titre: e.target.value })} placeholder="Titre du défi" required
                         className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm" />
                       <textarea value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} placeholder="Description" required rows={2}
@@ -133,7 +169,7 @@ export default function GestionDefis() {
                         <input type="date" value={form.date_fin} onChange={(e) => setForm({ ...form, date_fin: e.target.value })} className="border border-gray-200 rounded-lg px-3 py-2 text-sm" />
                       </div>
                       <button type="submit" disabled={saving} className="px-6 py-2 bg-bleu text-white rounded-lg text-sm font-medium hover:bg-bleu-clair transition-colors disabled:opacity-50">
-                        {saving ? 'Création...' : 'Créer le défi'}
+                        {saving ? (editingId ? 'Sauvegarde...' : 'Création...') : (editingId ? 'Sauvegarder' : 'Créer le défi')}
                       </button>
                     </form>
                   </div>
@@ -159,10 +195,18 @@ export default function GestionDefis() {
                       </div>
                       <p className="text-xs text-gray-500 line-clamp-1">{d.description}</p>
                     </div>
-                    <div className="flex items-center gap-4 shrink-0 text-xs text-gray-500">
+                    <div className="flex items-center gap-3 shrink-0 text-xs text-gray-500">
                       <span className="flex items-center gap-1"><Users size={14} /> {d.participants_count}</span>
                       <span className="flex items-center gap-1 text-or font-bold"><Zap size={14} /> {d.points_recompense} pts</span>
                       <span className={d.actif ? 'text-vert font-bold' : 'text-red-400'}>{d.actif ? 'Actif' : 'Terminé'}</span>
+                      <button onClick={() => startEdit(d)} className="p-1.5 text-gray-400 hover:text-bleu transition-colors" title="Modifier">
+                        <Pencil size={14} />
+                      </button>
+                      {d.actif && (
+                        <button onClick={() => handleArchive(d.id)} className="p-1.5 text-gray-400 hover:text-red-500 transition-colors" title="Archiver">
+                          <Archive size={14} />
+                        </button>
+                      )}
                     </div>
                   </div>
                 );

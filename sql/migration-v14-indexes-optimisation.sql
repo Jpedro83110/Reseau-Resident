@@ -11,6 +11,6 @@ CREATE INDEX IF NOT EXISTS idx_notifications_non_lu ON notifications(destinatair
 CREATE INDEX IF NOT EXISTS idx_profiles_ville ON profiles(ville_id);
 CREATE INDEX IF NOT EXISTS idx_profiles_email ON profiles(email);
 CREATE INDEX IF NOT EXISTS idx_offres_commerce_active ON offres(commerce_id, active) WHERE active = TRUE;
-CREATE INDEX IF NOT EXISTS idx_visites_commerce_date ON visites(commerce_id, date);
+CREATE INDEX IF NOT EXISTS idx_visites_commerce_date ON visites(commerce_id, date_visite);
 
 COMMIT;
