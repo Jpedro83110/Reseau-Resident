@@ -87,7 +87,7 @@ export default function EvenementsVille() {
                   <Link to={`/villes/${slug}/evenements/${evt.id}`}
                     className="block bg-white rounded-2xl border border-gray-200 overflow-hidden hover:shadow-md hover:border-bleu/20 transition-all">
                     {evt.image_url && (
-                      <img src={evt.image_url} alt={evt.titre} className="w-full h-40 object-cover" loading="lazy" decoding="async" />
+                      <img loading="lazy" decoding="async" src={evt.image_url} alt={evt.titre} className="w-full h-40 object-cover" />
                     )}
                     <div className="p-5">
                       <div className="flex gap-4">

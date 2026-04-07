@@ -199,7 +199,7 @@ export default function CreerProjet() {
           {/* Image hero */}
           {imagePreviewUrl ? (
             <div className="h-56 md:h-72 rounded-2xl overflow-hidden mb-6">
-              <img src={imagePreviewUrl} alt="Preview" className="w-full h-full object-cover" />
+              <img loading="lazy" decoding="async" src={imagePreviewUrl} alt="Preview" className="w-full h-full object-cover" />
             </div>
           ) : (
             <div className="h-40 rounded-2xl bg-gradient-to-br from-bleu/10 to-bleu/5 flex items-center justify-center mb-6">

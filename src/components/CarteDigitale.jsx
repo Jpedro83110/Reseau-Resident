@@ -13,7 +13,7 @@ export default function CarteDigitale({ ville, numero, expiration, prenom, nom, 
   }, [scanUrl]);
 
   return (
-    <div className="w-[340px] mx-auto">
+    <div className="w-full max-w-[340px] mx-auto">
       <div className="rounded-2xl shadow-2xl overflow-hidden bg-gradient-to-br from-[#1a3a5c] to-[#0d2440] border border-white/10 text-white">
         <div className="p-6 pb-4">
           <div className="flex justify-between items-start mb-6">
@@ -29,7 +29,7 @@ export default function CarteDigitale({ ville, numero, expiration, prenom, nom, 
         </div>
         {qrDataUri && (
           <div className="bg-white mx-4 mb-4 rounded-xl p-4 flex items-center gap-4">
-            <img src={qrDataUri} alt="QR Code" className="w-24 h-24 rounded-lg" />
+            <img loading="lazy" decoding="async" src={qrDataUri} alt="QR Code" className="w-24 h-24 rounded-lg" />
             <div className="flex-1 min-w-0">
               <div className="text-xs text-gray-400 uppercase tracking-wider font-bold mb-1">Scanner pour valider</div>
               <p className="text-xs text-gray-500 leading-relaxed">Présentez ce QR code au commerçant pour enregistrer votre visite.</p>

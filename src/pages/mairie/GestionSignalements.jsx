@@ -224,7 +224,7 @@ export default function GestionSignalements() {
                           )}
                           {s.photo_url && (
                             <div className="h-40 rounded-lg overflow-hidden border border-gray-200">
-                              <img src={s.photo_url} alt="Photo du signalement" className="w-full h-full object-cover" loading="lazy" />
+                              <img loading="lazy" decoding="async" src={s.photo_url} alt="Photo du signalement" className="w-full h-full object-cover" />
                             </div>
                           )}
                           {s.reponse_mairie && (

@@ -596,7 +596,7 @@ function AttributionRoleMairie() {
         </div>
         <div>
           <label className="block text-xs font-bold text-gray-600 mb-1">Rôle</label>
-          <select value={role} onChange={(e) => setRole(e.target.value)} className="border border-gray-200 rounded-lg px-3 py-2 text-sm bg-white">
+          <select value={role} onChange={(e) => setRole(e.target.value)} className="border border-gray-200 rounded-lg px-3 py-2.5 text-base bg-white">
             <option value="agent">Agent</option>
             <option value="directeur">Directeur</option>
             <option value="elu">Élu</option>
@@ -604,7 +604,7 @@ function AttributionRoleMairie() {
         </div>
         <div className="flex-1 min-w-[200px]">
           <label className="block text-xs font-bold text-gray-600 mb-1">Ville</label>
-          <select value={villeId} onChange={(e) => setVilleId(e.target.value)} required className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm bg-white">
+          <select value={villeId} onChange={(e) => setVilleId(e.target.value)} required className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-base bg-white">
             <option value="">-- Sélectionner --</option>
             {(villes ?? []).map((v) => <option key={v.id} value={v.id}>{v.nom}</option>)}
           </select>

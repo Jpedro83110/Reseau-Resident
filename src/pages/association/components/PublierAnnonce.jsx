@@ -144,7 +144,7 @@ export default function PublierAnnonce({ associationId, villeId, auteurType = 'a
         <label className="block text-xs font-medium text-gray-600 mb-1">Image (optionnel)</label>
         {imagePreview ? (
           <div className="relative w-full h-40 rounded-lg overflow-hidden border border-gray-200">
-            <img src={imagePreview} alt="Aperçu" className="w-full h-full object-cover" />
+            <img loading="lazy" decoding="async" src={imagePreview} alt="Aperçu" className="w-full h-full object-cover" />
             <button
               type="button"
               onClick={removeImage}

@@ -157,16 +157,16 @@ export default function GestionDefis() {
                     </div>
                     <form onSubmit={editingId ? handleUpdate : handleSubmit} className="space-y-4">
                       <input type="text" value={form.titre} onChange={(e) => setForm({ ...form, titre: e.target.value })} placeholder="Titre du défi" required
-                        className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm" />
+                        className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-base" />
                       <textarea value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} placeholder="Description" required rows={2}
-                        className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm resize-none" />
-                      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                        <select value={form.type} onChange={(e) => setForm({ ...form, type: e.target.value })} className="border border-gray-200 rounded-lg px-3 py-2 text-sm bg-white">
+                        className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-base resize-none" />
+                      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
+                        <select value={form.type} onChange={(e) => setForm({ ...form, type: e.target.value })} className="border border-gray-200 rounded-lg px-3 py-2.5 text-base bg-white">
                           {TYPES.map((t) => <option key={t.value} value={t.value}>{t.label}</option>)}
                         </select>
-                        <input type="number" value={form.points_recompense} onChange={(e) => setForm({ ...form, points_recompense: +e.target.value })} min={5} max={500} className="border border-gray-200 rounded-lg px-3 py-2 text-sm" placeholder="Points" />
-                        <input type="number" value={form.objectif_nombre} onChange={(e) => setForm({ ...form, objectif_nombre: +e.target.value })} min={1} className="border border-gray-200 rounded-lg px-3 py-2 text-sm" placeholder="Objectif" />
-                        <input type="date" value={form.date_fin} onChange={(e) => setForm({ ...form, date_fin: e.target.value })} className="border border-gray-200 rounded-lg px-3 py-2 text-sm" />
+                        <input type="number" value={form.points_recompense} onChange={(e) => setForm({ ...form, points_recompense: +e.target.value })} min={5} max={500} className="border border-gray-200 rounded-lg px-3 py-2.5 text-base" placeholder="Points" />
+                        <input type="number" value={form.objectif_nombre} onChange={(e) => setForm({ ...form, objectif_nombre: +e.target.value })} min={1} className="border border-gray-200 rounded-lg px-3 py-2.5 text-base" placeholder="Objectif" />
+                        <input type="date" value={form.date_fin} onChange={(e) => setForm({ ...form, date_fin: e.target.value })} className="border border-gray-200 rounded-lg px-3 py-2.5 text-base" />
                       </div>
                       <button type="submit" disabled={saving} className="px-6 py-2 bg-bleu text-white rounded-lg text-sm font-medium hover:bg-bleu-clair transition-colors disabled:opacity-50">
                         {saving ? (editingId ? 'Sauvegarde...' : 'Création...') : (editingId ? 'Sauvegarder' : 'Créer le défi')}

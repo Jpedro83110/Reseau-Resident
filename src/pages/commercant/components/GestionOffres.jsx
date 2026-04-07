@@ -112,17 +112,17 @@ export default function GestionOffres({ commerceId, categorie }) {
               </div>
               <form onSubmit={handleSubmit} className="space-y-3">
                 <input value={form.titre} onChange={(e) => setForm({ ...form, titre: e.target.value })} placeholder="Titre de l'offre" required
-                  className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm" />
+                  className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-base" />
                 <textarea value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} placeholder="Description (optionnel)" rows={2}
-                  className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm resize-none" />
+                  className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-base resize-none" />
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <select value={form.type} onChange={(e) => setForm({ ...form, type: e.target.value })} className="border border-gray-200 rounded-lg px-3 py-2 text-sm bg-white">
+                  <select value={form.type} onChange={(e) => setForm({ ...form, type: e.target.value })} className="border border-gray-200 rounded-lg px-3 py-2.5 text-base bg-white">
                     {TYPES.map((t) => <option key={t.value} value={t.value}>{t.label}</option>)}
                   </select>
-                  <input value={form.valeur} onChange={(e) => setForm({ ...form, valeur: e.target.value })} placeholder="Valeur (ex: -10%)" className="border border-gray-200 rounded-lg px-3 py-2 text-sm" />
+                  <input value={form.valeur} onChange={(e) => setForm({ ...form, valeur: e.target.value })} placeholder="Valeur (ex: -10%)" className="border border-gray-200 rounded-lg px-3 py-2.5 text-base" />
                 </div>
-                <input value={form.conditions} onChange={(e) => setForm({ ...form, conditions: e.target.value })} placeholder="Conditions (optionnel)" className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm" />
-                <input type="date" value={form.date_fin} onChange={(e) => setForm({ ...form, date_fin: e.target.value })} className="border border-gray-200 rounded-lg px-3 py-2 text-sm" />
+                <input value={form.conditions} onChange={(e) => setForm({ ...form, conditions: e.target.value })} placeholder="Conditions (optionnel)" className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-base" />
+                <input type="date" value={form.date_fin} onChange={(e) => setForm({ ...form, date_fin: e.target.value })} className="border border-gray-200 rounded-lg px-3 py-2.5 text-base" />
                 <button type="submit" disabled={saving} className="px-5 py-2 bg-bleu text-white rounded-lg text-sm font-medium hover:bg-bleu-clair transition-colors disabled:opacity-50">
                   {saving ? 'Création...' : 'Créer l\'offre'}
                 </button>

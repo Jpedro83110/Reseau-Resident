@@ -82,7 +82,7 @@ export default function EvenementDetail() {
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
           {/* Image */}
           {evt.image_url && (
-            <img src={evt.image_url} alt={evt.titre} className="w-full h-64 object-cover rounded-2xl mb-6" loading="lazy" decoding="async" />
+            <img loading="lazy" decoding="async" src={evt.image_url} alt={evt.titre} className="w-full h-64 object-cover rounded-2xl mb-6" />
           )}
 
           {/* Header */}

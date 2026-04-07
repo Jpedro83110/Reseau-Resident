@@ -161,7 +161,7 @@ export default function SignalementForm({ villeId, profileId, onSuccess }) {
         <label className="block text-xs font-medium text-gray-600 mb-1">Photo (optionnel)</label>
         {photoPreview ? (
           <div className="relative w-full h-32 rounded-lg overflow-hidden border border-gray-200">
-            <img src={photoPreview} alt="Aperçu" className="w-full h-full object-cover" />
+            <img loading="lazy" decoding="async" src={photoPreview} alt="Aperçu" className="w-full h-full object-cover" />
             <button
               type="button"
               onClick={removePhoto}

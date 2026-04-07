@@ -125,7 +125,7 @@ function VilleActive({ ville }) {
           <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-8 mb-12">
             <div className="flex items-center gap-6">
               {ville.logo_url && (
-                <img src={ville.logo_url} alt={`Logo ${ville.nom}`} className="w-20 h-20 md:w-24 md:h-24 object-contain rounded-2xl bg-white/10 p-2 border border-white/20" />
+                <img loading="lazy" decoding="async" src={ville.logo_url} alt={`Logo ${ville.nom}`} className="w-20 h-20 md:w-24 md:h-24 object-contain rounded-2xl bg-white/10 p-2 border border-white/20" />
               )}
               <div>
                 <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-green-500/20 border border-green-500/30 text-sm font-bold text-green-300 uppercase tracking-wider mb-4">

@@ -15,7 +15,7 @@ export default function BoutonFavori({ isFavori, onClick, size = 16, className =
       whileTap={{ scale: 0.85 }}
       animate={{ scale: [1, 1.25, 1] }}
       transition={{ duration: 0.3 }}
-      className={`p-1.5 rounded-lg transition-colors ${
+      className={`p-2.5 min-h-[44px] min-w-[44px] flex items-center justify-center rounded-lg transition-colors ${
         isFavori
           ? 'text-red-500 bg-red-50 hover:bg-red-100'
           : 'text-gray-300 hover:text-red-400 hover:bg-gray-100'

@@ -2,7 +2,7 @@ import { motion } from 'framer-motion';
 
 export default function CarteVisuelle({ ville = 'Sanary-sur-Mer', numero = 'SAN · 008431', expiration = '09/2026' }) {
   return (
-    <div className="perspective-1000 w-[300px] sm:w-[320px] h-[190px] sm:h-[200px] mx-auto">
+    <div className="perspective-1000 w-full max-w-[320px] aspect-[16/10] mx-auto">
       <motion.div
         className="w-full h-full relative preserve-3d cursor-pointer"
         whileHover={{ rotateY: 8, rotateX: 4, scale: 1.02 }}

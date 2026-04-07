@@ -134,7 +134,7 @@ export default function Carte3D({ ville, numero, expiration, prenom, nom, formul
               {qrDataUri ? (
                 <>
                   <div className="bg-white p-3 rounded-xl shadow-lg mb-3">
-                    <img src={qrDataUri} alt="QR Code" className="w-32 h-32" />
+                    <img loading="lazy" decoding="async" src={qrDataUri} alt="QR Code" className="w-32 h-32" />
                   </div>
                   <p className="text-xs text-blue-200 font-medium uppercase tracking-wider mb-1">Scannez pour valider</p>
                   <p className="text-[10px] text-blue-300/60">Exp. {expiration}</p>

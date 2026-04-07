@@ -4,6 +4,15 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Cache la scrollbar mais permet le scroll (tabs, listes horizontales) */
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
 /* ─── Variables CSS ───────────────────────────────────────────── */
 :root {
   --color-bleu: #1a3a5c;

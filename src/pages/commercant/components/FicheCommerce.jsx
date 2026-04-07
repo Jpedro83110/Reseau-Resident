@@ -140,7 +140,7 @@ export default function FicheCommerce({ commerce, onUpdate }) {
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
                 {photos.map((url, i) => (
                   <div key={i} className="h-24 rounded-lg overflow-hidden">
-                    <img src={url} alt={`Photo ${i + 1}`} className="w-full h-full object-cover" loading="lazy" />
+                    <img loading="lazy" decoding="async" src={url} alt={`Photo ${i + 1}`} className="w-full h-full object-cover" />
                   </div>
                 ))}
               </div>
@@ -234,7 +234,7 @@ export default function FicheCommerce({ commerce, onUpdate }) {
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 mb-3">
             {photos.map((url, i) => (
               <div key={i} className="relative h-24 rounded-lg overflow-hidden border border-gray-200 group">
-                <img src={url} alt={`Photo ${i + 1}`} className="w-full h-full object-cover" loading="lazy" />
+                <img loading="lazy" decoding="async" src={url} alt={`Photo ${i + 1}`} className="w-full h-full object-cover" />
                 <button
                   type="button"
                   onClick={() => handlePhotoDelete(url)}

@@ -124,7 +124,7 @@ export default function BrandingVille({ ville, onUpdate }) {
         style={{ background: cp }}
       >
         {logo && (
-          <img src={logo} alt="" className="w-8 h-8 object-contain rounded" />
+          <img loading="lazy" decoding="async" src={logo} alt="" className="w-8 h-8 object-contain rounded" />
         )}
         <span className="font-bold text-white text-sm">{ville?.nom}</span>
         <span

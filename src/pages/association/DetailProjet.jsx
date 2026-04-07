@@ -199,7 +199,7 @@ export default function DetailProjet() {
           {/* ── Image hero ── */}
           {projet.image_url ? (
             <div className="h-56 md:h-72 rounded-2xl overflow-hidden mb-6 shadow-sm">
-              <img src={projet.image_url} alt={projet.titre} className="w-full h-full object-cover" loading="lazy" decoding="async" />
+              <img loading="lazy" decoding="async" src={projet.image_url} alt={projet.titre} className="w-full h-full object-cover" />
             </div>
           ) : (
             <div className="h-36 rounded-2xl bg-gradient-to-br from-bleu/10 to-bleu/5 flex items-center justify-center mb-6">
@@ -229,7 +229,7 @@ export default function DetailProjet() {
           {association && (
             <div className="flex items-center gap-3 mb-6">
               {association.logo_url ? (
-                <img src={association.logo_url} alt={association.nom} className="w-8 h-8 rounded-lg object-cover" />
+                <img loading="lazy" decoding="async" src={association.logo_url} alt={association.nom} className="w-8 h-8 rounded-lg object-cover" />
               ) : (
                 <div className="w-8 h-8 rounded-lg bg-bleu/10 flex items-center justify-center">
                   <Users size={14} className="text-bleu" />

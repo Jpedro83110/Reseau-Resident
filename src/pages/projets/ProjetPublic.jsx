@@ -109,7 +109,7 @@ export default function ProjetPublic() {
       {/* Image hero */}
       {projet.image_url ? (
         <div className="w-full h-64 md:h-80 overflow-hidden relative">
-          <img src={projet.image_url} alt={projet.titre} className="w-full h-full object-cover" loading="lazy" decoding="async" />
+          <img loading="lazy" decoding="async" src={projet.image_url} alt={projet.titre} className="w-full h-full object-cover" />
           <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent" />
         </div>
       ) : (
@@ -163,7 +163,7 @@ export default function ProjetPublic() {
           {association && (
             <div className="flex items-center gap-3 mb-6">
               {association.logo_url ? (
-                <img src={association.logo_url} alt={association.nom} className="w-10 h-10 rounded-full object-cover border border-gray-200" />
+                <img loading="lazy" decoding="async" src={association.logo_url} alt={association.nom} className="w-10 h-10 rounded-full object-cover border border-gray-200" />
               ) : (
                 <div className="w-10 h-10 rounded-full bg-vert/10 flex items-center justify-center text-vert">
                   <Users size={18} />

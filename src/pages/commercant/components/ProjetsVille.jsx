@@ -92,7 +92,7 @@ export default function ProjetsVille({ villeId }) {
                   {/* Image */}
                   {projet.image_url ? (
                     <div className="w-20 h-20 rounded-lg overflow-hidden shrink-0">
-                      <img src={projet.image_url} alt={projet.titre} className="w-full h-full object-cover" loading="lazy" decoding="async" />
+                      <img loading="lazy" decoding="async" src={projet.image_url} alt={projet.titre} className="w-full h-full object-cover" />
                     </div>
                   ) : (
                     <div className="w-20 h-20 rounded-lg bg-gradient-to-br from-bleu/10 to-bleu/5 flex items-center justify-center shrink-0">

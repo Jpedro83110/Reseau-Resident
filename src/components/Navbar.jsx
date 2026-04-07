@@ -178,7 +178,7 @@ export default function Navbar() {
             style={{ background: villeTheme?.couleur_primaire || '#1a3a5c' }}
           >
             {villeTheme?.logo_url && (
-              <img src={villeTheme.logo_url} alt="" className="w-7 h-7 object-contain rounded" />
+              <img loading="lazy" decoding="async" src={villeTheme.logo_url} alt="" className="w-7 h-7 object-contain rounded" />
             )}
             Réseaux-Résident
           </Link>
@@ -228,7 +228,7 @@ export default function Navbar() {
                         transition={{ duration: 0.15 }}
                         role="menu"
                         aria-label="Menu utilisateur"
-                        className="absolute right-0 top-full mt-2 w-56 bg-white rounded-xl shadow-xl border border-gray-200 overflow-hidden z-50"
+                        className="absolute right-0 top-full mt-2 w-56 max-w-[calc(100vw-2rem)] bg-white rounded-xl shadow-xl border border-gray-200 overflow-hidden z-50"
                       >
                         {/* Identité */}
                         <div className="px-4 py-3 border-b border-gray-100">

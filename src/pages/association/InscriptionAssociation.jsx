@@ -414,7 +414,7 @@ export default function InscriptionAssociation() {
               <label className="block text-sm font-bold text-gray-700 mb-2">Logo</label>
               {logoPreview ? (
                 <div className="flex items-center gap-4">
-                  <img src={logoPreview} alt="Logo" className="w-20 h-20 rounded-xl object-cover border border-gray-200" />
+                  <img loading="lazy" decoding="async" src={logoPreview} alt="Logo" className="w-20 h-20 rounded-xl object-cover border border-gray-200" />
                   <button
                     type="button"
                     onClick={removeLogo}

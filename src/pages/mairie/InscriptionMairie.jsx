@@ -259,7 +259,7 @@ export default function InscriptionMairie() {
                     <label className="block text-sm font-bold text-gray-700 mb-2">Logo de la commune</label>
                     <div className="flex items-center gap-4">
                       {logoPreview && (
-                        <img src={logoPreview} alt="Logo" className="w-16 h-16 object-contain rounded-xl border border-gray-200" />
+                        <img loading="lazy" decoding="async" src={logoPreview} alt="Logo" className="w-16 h-16 object-contain rounded-xl border border-gray-200" />
                       )}
                       <label className="flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-xl border-2 border-dashed border-gray-200 hover:border-bleu/40 cursor-pointer transition-colors text-sm text-gray-500">
                         <span>{logoFile ? logoFile.name : 'Choisir un fichier (PNG, JPG, SVG)'}</span>

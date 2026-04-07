@@ -159,7 +159,7 @@ function ModalActualite({ actu, villeId, onClose, onSaved }) {
             <label className="block text-xs font-medium text-gray-600 mb-1">Image</label>
             {imagePreview ? (
               <div className="relative w-full h-36 rounded-lg overflow-hidden border border-gray-200">
-                <img src={imagePreview} alt="Aperçu" className="w-full h-full object-cover" />
+                <img loading="lazy" decoding="async" src={imagePreview} alt="Aperçu" className="w-full h-full object-cover" />
                 <button type="button" onClick={removeImage}
                   className="absolute top-2 right-2 p-1.5 bg-white/90 rounded-full text-gray-600 hover:text-red-500 transition-colors">
                   <X size={14} />
