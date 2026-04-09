@@ -43,10 +43,10 @@ export default function GestionCommerces() {
 
       const [comRes, demRes] = await Promise.all([
         supabase.from('commerces').select('id, nom, categorie, avantage, adresse, telephone, email_contact, site_web, description, horaires, actif, premium, visites, owner_id, created_at').eq('ville_id', v.id).order('nom'),
-        supabase.from('commercants_inscrits').select('id, nom_commerce, categorie, email, telephone, avantage_propose, adresse, nom_ville, statut, created_at').order('created_at', { ascending: false }),
+        supabase.from('commercants_inscrits').select('id, nom_commerce, categorie, email, telephone, avantage_propose, adresse, nom_ville, statut, created_at').eq('statut', 'en_attente').order('created_at', { ascending: false }),
       ]);
       setCommerces(comRes.data ?? []);
-      setDemandes((demRes.data ?? []).filter((d) => d.statut === 'en_attente'));
+      setDemandes(demRes.data ?? []);
     } catch (err) {
       console.error('Erreur GestionCommerces:', err);
       setError('Erreur lors du chargement des données.');
@@ -111,9 +111,8 @@ export default function GestionCommerces() {
         }
       }
 
-      // 5. Mettre à jour l'UI
-      setDemandes((prev) => prev.filter((d) => d.id !== demande.id));
-      setCommerces((prev) => [...prev, newCommerce]);
+      // 5. Recharger les données pour synchroniser la liste
+      await charger();
       showToast({ type: 'success', message: `Commerce "${demande.nom_commerce}" validé avec succès` });
 
     } catch (err) {
@@ -131,9 +130,9 @@ export default function GestionCommerces() {
       await supabase.from('commercants_inscrits').update({
         statut: 'refuse',
       }).eq('id', id);
-      setDemandes((prev) => prev.filter((d) => d.id !== id));
       setShowRefusModal(null);
       setRefusMotif('');
+      await charger();
       showToast({ type: 'success', message: 'Demande refusée' });
     } catch (err) {
       console.error('Erreur refus:', err);

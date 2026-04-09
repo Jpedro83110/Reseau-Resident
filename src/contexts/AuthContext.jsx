@@ -1,5 +1,6 @@
 // src/contexts/AuthContext.jsx
-import { createContext, useContext, useState, useEffect } from 'react';
+// Contexte d'authentification optimisé — détection des rôles avec cache session
+import { createContext, useContext, useState, useEffect, useRef, useCallback } from 'react';
 import { supabase } from '../lib/supabase';
 import { clearCache } from '../lib/cache';
 import { captureError } from '../lib/sentry';
@@ -7,7 +8,16 @@ import { identifyUser, resetUser, trackEvent } from '../lib/analytics';
 
 const AuthContext = createContext(null);
 
-async function detecterRoles(userId, setProfile, setRoles, setVilleTheme) {
+// Cache des rôles en mémoire pour éviter de refaire 5 requêtes à chaque TOKEN_REFRESHED
+let rolesCache = { userId: null, roles: null, profile: null, villeTheme: null, ts: 0 };
+const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
+
+function isCacheValid(userId) {
+  return rolesCache.userId === userId && rolesCache.roles && (Date.now() - rolesCache.ts < CACHE_TTL);
+}
+
+async function detecterRoles(userId) {
+  // Toutes les requêtes de détection en parallèle (5 requêtes, ~1 round-trip grâce au multiplexing HTTP/2)
   const resultats = await Promise.allSettled([
     supabase.from('profiles').select('id, ville_id, prenom, nom, email, telephone, adresse, points, niveau, code_parrainage, avatar_url, created_at').eq('id', userId).maybeSingle(),
     supabase.from('commercant_profiles').select('id, commerce_id, role').eq('id', userId).maybeSingle(),
@@ -22,15 +32,14 @@ async function detecterRoles(userId, setProfile, setRoles, setVilleTheme) {
 
   const roles = [];
   let villeId = null;
+  const profile = profileRes.data;
 
-  if (profileRes.data) {
-    setProfile(profileRes.data);
+  if (profile) {
     roles.push('resident');
-    villeId = profileRes.data.ville_id || null;
+    villeId = profile.ville_id || null;
   }
   if (commercantRes.data) {
     roles.push('commercant');
-    // Recuperer ville_id du commerce
     if (!villeId && commercantRes.data.commerce_id) {
       const { data: commerce } = await supabase.from('commerces').select('ville_id').eq('id', commercantRes.data.commerce_id).maybeSingle();
       if (commerce) villeId = commerce.ville_id;
@@ -43,34 +52,29 @@ async function detecterRoles(userId, setProfile, setRoles, setVilleTheme) {
   }
   if (adminRes.data) roles.push('admin');
 
-  // Charger le theme de la ville si on a un ville_id
-  if (villeId && setVilleTheme) {
+  // Charger le thème ville (une seule requête)
+  let villeTheme = null;
+  if (villeId) {
     const { data: villeData } = await supabase.from('villes')
-      .select('id, nom, logo_url, couleur_primaire, couleur_secondaire')
+      .select('id, nom, slug, logo_url, couleur_primaire, couleur_secondaire')
       .eq('id', villeId).maybeSingle();
     if (villeData) {
-      setVilleTheme(villeData);
-      // Appliquer les couleurs au document
+      villeTheme = villeData;
       document.documentElement.style.setProperty('--ville-primaire', villeData.couleur_primaire || '#1a3a5c');
       document.documentElement.style.setProperty('--ville-secondaire', villeData.couleur_secondaire || '#c8963e');
     }
   }
 
-  setRoles(roles);
-
-  // Analytics : identifier l'utilisateur
-  if (roles.length > 0 && profileRes.data) {
-    identifyUser(userId, {
-      email: profileRes.data.email,
-      prenom: profileRes.data.prenom,
-      nom: profileRes.data.nom,
-      roles,
-      ville: villeId,
-    });
+  // Analytics
+  if (roles.length > 0 && profile) {
+    identifyUser(userId, { email: profile.email, prenom: profile.prenom, nom: profile.nom, roles, ville: villeId });
     trackEvent('login_success', { roles });
   }
 
-  return roles;
+  // Mettre en cache
+  rolesCache = { userId, roles, profile, villeTheme, ts: Date.now() };
+
+  return { roles, profile, villeTheme };
 }
 
 export function AuthProvider({ children }) {
@@ -79,51 +83,70 @@ export function AuthProvider({ children }) {
   const [roles, setRoles] = useState([]);
   const [villeTheme, setVilleTheme] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
+  const detectingRef = useRef(false); // Empêche les appels simultanés
+
+  const applyRoles = useCallback(async (userId, forceRefresh = false) => {
+    // Anti-doublon : si déjà en cours, ne pas relancer
+    if (detectingRef.current) return;
+
+    // Cache valide → appliquer sans requête
+    if (!forceRefresh && isCacheValid(userId)) {
+      setProfile(rolesCache.profile);
+      setRoles(rolesCache.roles);
+      setVilleTheme(rolesCache.villeTheme);
+      return;
+    }
+
+    detectingRef.current = true;
+    try {
+      const result = await detecterRoles(userId);
+      setProfile(result.profile);
+      setRoles(result.roles);
+      setVilleTheme(result.villeTheme);
+    } catch (err) {
+      captureError(err, 'detecterRoles');
+    } finally {
+      detectingRef.current = false;
+    }
+  }, []);
 
   useEffect(() => {
-    // Vérification de la session initiale
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      const currentUser = session?.user ?? null;
-      setUser(currentUser);
-      if (currentUser) {
-        detecterRoles(currentUser.id, setProfile, setRoles, setVilleTheme).finally(() =>
-          setIsLoading(false)
-        );
-      } else {
-        setIsLoading(false);
-      }
-    }).catch((err) => {
-      // Si Supabase est injoignable (env manquant, réseau…), on débloque l'app
-      captureError(err, 'AuthContext.init');
-      setIsLoading(false);
-    });
+    let mounted = true;
 
-    // Écoute des changements d'état auth
+    // Écoute des changements d'état auth (inclut INITIAL_SESSION)
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
+      async (event, session) => {
+        if (!mounted) return;
         const currentUser = session?.user ?? null;
 
         if (event === 'SIGNED_OUT' || !currentUser) {
-          // Déconnexion (y compris depuis un autre onglet)
           setUser(null);
           setProfile(null);
           setRoles([]);
+          setVilleTheme(null);
+          rolesCache = { userId: null, roles: null, profile: null, villeTheme: null, ts: 0 };
+          setIsLoading(false);
           return;
         }
 
-        if (event === 'SIGNED_IN') {
-          setUser(currentUser);
-          setIsLoading(true);
-          detecterRoles(currentUser.id, setProfile, setRoles, setVilleTheme).finally(() => setIsLoading(false));
-        } else if (event === 'TOKEN_REFRESHED' || event === 'INITIAL_SESSION') {
-          setUser(currentUser);
-          detecterRoles(currentUser.id, setProfile, setRoles, setVilleTheme);
+        setUser(currentUser);
+
+        if (event === 'INITIAL_SESSION' || event === 'SIGNED_IN') {
+          // Forcer le refresh au login, utiliser le cache pour INITIAL_SESSION
+          await applyRoles(currentUser.id, event === 'SIGNED_IN');
+          if (mounted) setIsLoading(false);
+        } else if (event === 'TOKEN_REFRESHED') {
+          // Token refresh (~1h) → utiliser le cache, pas de requête
+          await applyRoles(currentUser.id, false);
         }
       }
     );
 
-    return () => subscription.unsubscribe();
-  }, []);
+    return () => {
+      mounted = false;
+      subscription.unsubscribe();
+    };
+  }, [applyRoles]);
 
   async function signIn(email, password) {
     const { data, error } = await supabase.auth.signInWithPassword({ email, password });
@@ -149,6 +172,7 @@ export function AuthProvider({ children }) {
     setProfile(null);
     setRoles([]);
     setVilleTheme(null);
+    rolesCache = { userId: null, roles: null, profile: null, villeTheme: null, ts: 0 };
     document.documentElement.style.removeProperty('--ville-primaire');
     document.documentElement.style.removeProperty('--ville-secondaire');
   }
@@ -157,14 +181,19 @@ export function AuthProvider({ children }) {
     return roles.includes(role);
   }
 
-  const value = { user, profile, roles, villeTheme, isLoading, signIn, signUp, signOut, hasRole };
+  // Forcer le rafraîchissement des rôles (après validation commerce par ex.)
+  async function refreshRoles() {
+    if (user) await applyRoles(user.id, true);
+  }
 
-  // Écran de chargement plein écran tant que l'auth n'est pas résolue
+  const value = { user, profile, roles, villeTheme, isLoading, signIn, signUp, signOut, hasRole, refreshRoles };
+
+  // Écran de chargement — UNIQUEMENT au tout premier chargement
   if (isLoading) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center bg-creme">
         <div className="w-10 h-10 border-4 border-bleu border-t-transparent rounded-full animate-spin" />
-        <p className="mt-4 text-gray-500 font-medium">Connexion en cours...</p>
+        <p className="mt-4 text-gray-500 font-medium">Chargement...</p>
       </div>
     );
   }

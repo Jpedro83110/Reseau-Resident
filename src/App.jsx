@@ -27,6 +27,7 @@ const InscriptionMairie = lazy(() => import('./pages/mairie/InscriptionMairie'))
 const Connexion = lazy(() => import('./pages/auth/Connexion'));
 const InscriptionCompte = lazy(() => import('./pages/auth/InscriptionCompte'));
 const MotDePasseOublie = lazy(() => import('./pages/auth/MotDePasseOublie'));
+const NouveauMotDePasse = lazy(() => import('./pages/auth/NouveauMotDePasse'));
 const CompleterProfil = lazy(() => import('./pages/auth/CompleterProfil'));
 const SupprimerCompte = lazy(() => import('./pages/auth/SupprimerCompte'));
 const Parametres = lazy(() => import('./pages/auth/Parametres'));
@@ -95,6 +96,7 @@ export default function App() {
         <Route path="connexion" element={<W><Connexion /></W>} />
         <Route path="inscription-compte" element={<W><InscriptionCompte /></W>} />
         <Route path="mot-de-passe-oublie" element={<W><MotDePasseOublie /></W>} />
+        <Route path="nouveau-mot-de-passe" element={<W><NouveauMotDePasse /></W>} />
         <Route
           path="completer-profil"
           element={

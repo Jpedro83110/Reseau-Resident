@@ -1,11 +1,23 @@
-import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { LogIn, Loader2 } from 'lucide-react';
-import { supabase } from '../../lib/supabase';
+import { useAuthContext } from '../../contexts/AuthContext';
 import usePageMeta from '../../hooks/usePageMeta';
+
+// Redirection post-login par rôle
+const ROLE_REDIRECT = {
+  mairie: '/mairie',
+  admin: '/dashboard',
+  commercant: '/mon-commerce',
+  association: '/mon-association',
+  resident: '/mon-espace',
+};
+const ROLE_PRIORITE = ['mairie', 'admin', 'commercant', 'association', 'resident'];
 
 export default function Connexion() {
   const navigate = useNavigate();
+  const location = useLocation();
+  const { user, roles, signIn } = useAuthContext();
   usePageMeta('Connexion');
 
   const [email, setEmail] = useState('');
@@ -13,29 +25,34 @@ export default function Connexion() {
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(false);
 
+  // Si déjà connecté et rôles détectés → rediriger automatiquement
+  useEffect(() => {
+    if (user && roles.length > 0) {
+      const from = location.state?.from?.pathname;
+      if (from && from !== '/connexion') {
+        navigate(from, { replace: true });
+      } else {
+        const topRole = ROLE_PRIORITE.find((r) => roles.includes(r)) || 'resident';
+        navigate(ROLE_REDIRECT[topRole], { replace: true });
+      }
+    }
+  }, [user, roles, navigate, location.state]);
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError(null);
     setLoading(true);
 
     try {
-      const { data, error: authError } = await supabase.auth.signInWithPassword({ email, password });
-
-      if (authError) {
-        if (authError.message.includes('Invalid login')) setError('Email ou mot de passe incorrect.');
-        else if (authError.message.includes('Email not confirmed')) setError('Veuillez confirmer votre email (vérifiez vos spams).');
-        else if (authError.message.includes('Too many requests')) setError('Trop de tentatives. Réessayez dans quelques minutes.');
-        else setError(authError.message);
-        setLoading(false);
-        return;
-      }
-
-      if (data?.session) {
-        navigate('/mon-espace');
-      }
-    } catch (err) {
-      console.error('Erreur connexion:', err);
-      setError('Une erreur est survenue.');
+      // signIn déclenche onAuthStateChange → AuthContext détecte les rôles automatiquement
+      await signIn(email, password);
+      // La redirection se fait via le useEffect ci-dessus quand roles sera mis à jour
+    } catch (authError) {
+      const msg = authError?.message || '';
+      if (msg.includes('Invalid login')) setError('Email ou mot de passe incorrect.');
+      else if (msg.includes('Email not confirmed')) setError('Veuillez confirmer votre email (vérifiez vos spams).');
+      else if (msg.includes('Too many requests')) setError('Trop de tentatives. Réessayez dans quelques minutes.');
+      else setError(msg || 'Une erreur est survenue.');
     } finally {
       setLoading(false);
     }
