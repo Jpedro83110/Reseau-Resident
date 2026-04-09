@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Search, Users, ChevronLeft, ChevronRight, Shield, X, Plus, Trash2, Loader2 } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
+import { useToast } from '../../components/ui/Toast';
 import useDebounce from '../../hooks/useDebounce';
 import usePageMeta from '../../hooks/usePageMeta';
 
@@ -25,6 +26,7 @@ const ROLE_COLORS = {
 
 // ── Modal gestion des rôles ─────────────────────────────────
 function RolesModal({ user, onClose }) {
+  const { showToast } = useToast();
   const [roles, setRoles] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -97,12 +99,15 @@ function RolesModal({ user, onClose }) {
         } else {
           setError('Erreur : ' + insertError.message);
         }
+        showToast({ type: 'error', message: 'Erreur lors de l\'ajout du rôle' });
       } else {
         await chargerRoles();
+        showToast({ type: 'success', message: `Rôle ${ROLE_LABELS[type]} ajouté` });
       }
     } catch (err) {
       setError('Erreur lors de l\'ajout du rôle.');
       console.error('Erreur ajout rôle:', err);
+      showToast({ type: 'error', message: 'Erreur lors de l\'ajout du rôle' });
     } finally {
       setAdding(null);
     }
@@ -121,12 +126,15 @@ function RolesModal({ user, onClose }) {
       const { error: deleteError } = await supabase.from(table).delete().eq('id', user.id);
       if (deleteError) {
         setError('Erreur : ' + deleteError.message);
+        showToast({ type: 'error', message: 'Erreur lors de la suppression du rôle' });
       } else {
         await chargerRoles();
+        showToast({ type: 'success', message: `Rôle ${ROLE_LABELS[type]} retiré` });
       }
     } catch (err) {
       setError('Erreur lors de la suppression du rôle.');
       console.error('Erreur suppression rôle:', err);
+      showToast({ type: 'error', message: 'Erreur lors de la suppression du rôle' });
     } finally {
       setRemoving(null);
     }

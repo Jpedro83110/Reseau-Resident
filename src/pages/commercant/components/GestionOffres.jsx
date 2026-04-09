@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Tag, Plus, X, ToggleLeft, ToggleRight, Lightbulb, Trash2 } from 'lucide-react';
 import { supabase } from '../../../lib/supabase';
+import { useToast } from '../../../components/ui/Toast';
 
 const SUGGESTIONS = {
   'Restauration / Bar / Café': ['Menu du jour à -10%', 'Dessert offert pour 2 plats', 'Café offert le matin'],
@@ -23,6 +24,7 @@ const TYPES = [
 ];
 
 export default function GestionOffres({ commerceId, categorie }) {
+  const { showToast } = useToast();
   const [offres, setOffres] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
@@ -60,17 +62,30 @@ export default function GestionOffres({ commerceId, categorie }) {
       setOffres((prev) => [data, ...prev]);
       setShowForm(false);
       setForm({ titre: '', description: '', type: 'reduction', valeur: '', conditions: '', date_fin: '' });
+      showToast({ type: 'success', message: 'Offre créée avec succès' });
+    } else if (error) {
+      showToast({ type: 'error', message: 'Erreur lors de la création de l\'offre' });
     }
   }
 
   async function toggleActive(id, active) {
-    await supabase.from('offres').update({ active: !active }).eq('id', id);
-    setOffres((prev) => prev.map((o) => o.id === id ? { ...o, active: !active } : o));
+    const { error: err } = await supabase.from('offres').update({ active: !active }).eq('id', id);
+    if (!err) {
+      setOffres((prev) => prev.map((o) => o.id === id ? { ...o, active: !active } : o));
+      showToast({ type: 'success', message: active ? 'Offre désactivée' : 'Offre activée' });
+    } else {
+      showToast({ type: 'error', message: 'Erreur lors du changement de statut' });
+    }
   }
 
   async function supprimer(id) {
-    await supabase.from('offres').delete().eq('id', id);
-    setOffres((prev) => prev.filter((o) => o.id !== id));
+    const { error: err } = await supabase.from('offres').delete().eq('id', id);
+    if (!err) {
+      setOffres((prev) => prev.filter((o) => o.id !== id));
+      showToast({ type: 'success', message: 'Offre supprimée' });
+    } else {
+      showToast({ type: 'error', message: 'Erreur lors de la suppression' });
+    }
   }
 
   const suggestions = SUGGESTIONS[categorie] ?? SUGGESTIONS['Services'] ?? [];

@@ -5,6 +5,7 @@ import { motion } from 'framer-motion';
 import { AlertTriangle, MapPin, Clock, MessageSquare, ChevronDown, Filter, X } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
 import { supabase } from '../../lib/supabase';
+import { useToast } from '../../components/ui/Toast';
 import MairieNav from './components/MairieNav';
 import usePageMeta from '../../hooks/usePageMeta';
 
@@ -27,6 +28,7 @@ const PAGE_SIZE = 15;
 
 export default function GestionSignalements() {
   const { user } = useAuth();
+  const { showToast } = useToast();
   usePageMeta('Mairie — Signalements');
 
   const [ville, setVille] = useState(null);
@@ -103,8 +105,11 @@ export default function GestionSignalements() {
       await chargerSignalements(ville?.id, filtreStatut, page);
       setSelected(null);
       setReponse('');
+      const labels = { en_cours: 'en cours', resolu: 'résolu', rejete: 'rejeté' };
+      showToast({ type: 'success', message: `Signalement marqué ${labels[newStatut] || newStatut}` });
     } catch (err) {
       console.error('Erreur mise à jour signalement:', err);
+      showToast({ type: 'error', message: 'Erreur lors de la mise à jour du signalement' });
     } finally {
       setIsSaving(false);
     }

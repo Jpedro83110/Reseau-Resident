@@ -3,12 +3,14 @@ import { Link, useNavigate } from 'react-router-dom';
 import { Settings, User, Mail, Phone, MapPin, Save, Loader2, Trash2, AlertTriangle, LogOut, Lock } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { useAuthContext } from '../../contexts/AuthContext';
+import { useToast } from '../../components/ui/Toast';
 import usePageMeta from '../../hooks/usePageMeta';
 
 export default function Parametres() {
   usePageMeta('Paramètres du compte');
   const navigate = useNavigate();
   const { user, profile, signOut } = useAuthContext();
+  const { showToast } = useToast();
 
   const [form, setForm] = useState({ prenom: '', nom: '', telephone: '', adresse: '' });
   const [passwordForm, setPasswordForm] = useState({ newPassword: '', confirmPassword: '' });
@@ -51,8 +53,10 @@ export default function Parametres() {
 
     if (updateErr) {
       setError('Erreur : ' + updateErr.message);
+      showToast({ type: 'error', message: 'Erreur lors de la mise à jour du profil' });
     } else {
       setSuccess('Informations mises à jour.');
+      showToast({ type: 'success', message: 'Profil mis à jour avec succès' });
     }
     setLoading(false);
   }
@@ -74,9 +78,11 @@ export default function Parametres() {
     const { error: pwErr } = await supabase.auth.updateUser({ password: passwordForm.newPassword });
     if (pwErr) {
       setError('Erreur : ' + pwErr.message);
+      showToast({ type: 'error', message: 'Erreur lors du changement de mot de passe' });
     } else {
       setSuccess('Mot de passe modifié.');
       setPasswordForm({ newPassword: '', confirmPassword: '' });
+      showToast({ type: 'success', message: 'Mot de passe modifié avec succès' });
     }
     setPasswordLoading(false);
   }

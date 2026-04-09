@@ -1,5 +1,5 @@
 import { lazy, Suspense } from 'react';
-import { Routes, Route } from 'react-router-dom';
+import { Routes, Route, Navigate } from 'react-router-dom';
 import Layout from './components/Layout';
 import ProtectedRoute from './components/ProtectedRoute';
 import ErrorBoundary from './components/ErrorBoundary';
@@ -122,6 +122,9 @@ export default function App() {
             </ProtectedRoute>
           }
         />
+
+        {/* Redirect /mon-espace/profil → /parametres */}
+        <Route path="mon-espace/profil" element={<Navigate to="/parametres" replace />} />
 
         <Route
           path="parametres"

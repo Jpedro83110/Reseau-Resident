@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { Edit3, Save, X, MapPin, Phone, Mail, Globe, Clock, Upload, Image as ImageIcon, Trash2 } from 'lucide-react';
 import { supabase } from '../../../lib/supabase';
+import { useToast } from '../../../components/ui/Toast';
 
 const MAX_PHOTOS = 5;
 const MAX_PHOTO_SIZE = 2 * 1024 * 1024; // 2 Mo
@@ -13,6 +14,7 @@ const JOURS_LABELS = { lundi: 'Lundi', mardi: 'Mardi', mercredi: 'Mercredi', jeu
 const DEFAULT_HORAIRES = Object.fromEntries(JOURS.map((j) => [j, { ouvert: j !== 'dimanche', debut: '09:00', fin: '19:00' }]));
 
 export default function FicheCommerce({ commerce, onUpdate }) {
+  const { showToast } = useToast();
   const [editing, setEditing] = useState(false);
   const [saving, setSaving] = useState(false);
   const [photos, setPhotos] = useState(commerce.photos ?? []);
@@ -84,6 +86,9 @@ export default function FicheCommerce({ commerce, onUpdate }) {
     if (!error) {
       setEditing(false);
       onUpdate?.();
+      showToast({ type: 'success', message: 'Fiche commerce enregistrée' });
+    } else {
+      showToast({ type: 'error', message: 'Erreur lors de l\'enregistrement' });
     }
   }
 

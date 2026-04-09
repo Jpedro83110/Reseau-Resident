@@ -164,6 +164,7 @@ export default function Navbar() {
     location.pathname === path ? 'text-or' : '';
 
   return (
+    <>
     <header
       className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
         isScrolled ? 'bg-white/95 backdrop-blur-md shadow-sm py-3' : 'bg-bleu/80 backdrop-blur-md py-4'
@@ -332,7 +333,9 @@ export default function Navbar() {
         </div>
       </div>
 
-      {/* ── Menu mobile (overlay plein écran) ── */}
+    </header>
+
+      {/* ── Menu mobile — HORS du <header> pour échapper au stacking context z-50 ── */}
       <AnimatePresence>
         {isMobileOpen && (
           <>
@@ -341,7 +344,7 @@ export default function Navbar() {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="fixed inset-0 bg-black/40 z-40 lg:hidden"
+              className="fixed inset-0 bg-black/50 z-[60] lg:hidden"
               onClick={() => setIsMobileOpen(false)}
             />
 
@@ -351,14 +354,14 @@ export default function Navbar() {
               animate={{ x: 0 }}
               exit={{ x: '100%' }}
               transition={{ type: 'spring', damping: 28, stiffness: 300 }}
-              className="fixed top-0 right-0 bottom-0 w-[300px] max-w-[85vw] bg-white z-50 shadow-2xl overflow-y-auto lg:hidden"
+              className="fixed inset-y-0 right-0 w-[300px] max-w-[85vw] bg-white z-[70] shadow-2xl overflow-y-auto lg:hidden"
             >
               {/* Header du panneau */}
-              <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
+              <div className="flex items-center justify-between px-5 h-14 border-b border-gray-100 sticky top-0 bg-white z-10">
                 <span className="font-serif text-lg font-bold text-bleu">Menu</span>
                 <button
                   onClick={() => setIsMobileOpen(false)}
-                  className="p-2 rounded-lg text-gray-400 hover:bg-gray-100 transition-colors"
+                  className="p-2.5 min-h-[44px] min-w-[44px] flex items-center justify-center rounded-lg text-gray-400 hover:bg-gray-100 transition-colors"
                   aria-label="Fermer le menu"
                 >
                   <X size={22} />
@@ -405,7 +408,6 @@ export default function Navbar() {
 
               {isConnecte ? (
                 <>
-                  {/* Liens dropdown résident en mobile */}
                   {roleAffiche === 'resident' && (
                     <div className="px-3 py-2 border-t border-gray-100">
                       <p className="px-4 py-2 text-[10px] font-bold text-gray-400 uppercase tracking-wider">
@@ -424,7 +426,6 @@ export default function Navbar() {
                     </div>
                   )}
 
-                  {/* Sélecteur multi-rôles mobile */}
                   {aMultiRoles && (
                     <div className="px-3 py-2 border-t border-gray-100">
                       <p className="px-4 py-2 text-[10px] font-bold text-gray-400 uppercase tracking-wider">
@@ -447,7 +448,6 @@ export default function Navbar() {
                     </div>
                   )}
 
-                  {/* Déconnexion */}
                   <div className="px-3 py-4 border-t border-gray-100 mt-auto">
                     <button
                       onClick={handleSignOut}
@@ -478,6 +478,6 @@ export default function Navbar() {
           </>
         )}
       </AnimatePresence>
-    </header>
+    </>
   );
 }

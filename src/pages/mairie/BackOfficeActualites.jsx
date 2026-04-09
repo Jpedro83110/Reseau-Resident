@@ -8,6 +8,7 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
 import { supabase } from '../../lib/supabase';
+import { useToast } from '../../components/ui/Toast';
 import MairieNav from './components/MairieNav';
 import usePageMeta from '../../hooks/usePageMeta';
 
@@ -18,6 +19,7 @@ const CATEGORIES = [
 
 // ── Modal formulaire ─────────────────────────────────────────
 function ModalActualite({ actu, villeId, onClose, onSaved }) {
+  const { showToast } = useToast();
   const isEdition = !!actu;
   const [form, setForm] = useState({
     titre: actu?.titre ?? '',
@@ -93,9 +95,11 @@ function ModalActualite({ actu, villeId, onClose, onSaved }) {
 
       onSaved();
       onClose();
+      showToast({ type: 'success', message: isEdition ? 'Actualité modifiée' : 'Actualité publiée' });
     } catch (err) {
       console.error('Erreur sauvegarde actualité:', err);
       setErreur('Erreur lors de la sauvegarde.');
+      showToast({ type: 'error', message: 'Erreur lors de la sauvegarde de l\'actualité' });
     } finally {
       setIsSaving(false);
     }
@@ -216,6 +220,7 @@ function ModalActualite({ actu, villeId, onClose, onSaved }) {
 // ── Page principale ──────────────────────────────────────────
 export default function BackOfficeActualites() {
   const { user } = useAuth();
+  const { showToast } = useToast();
   usePageMeta('Mairie \u2014 Actualités');
 
   const [ville, setVille] = useState(null);
@@ -259,7 +264,12 @@ export default function BackOfficeActualites() {
 
   async function togglePublie(actu) {
     const { error: e } = await supabase.from('actualites').update({ publie: !actu.publie }).eq('id', actu.id);
-    if (!e) setActualites((prev) => prev.map((a) => a.id === actu.id ? { ...a, publie: !a.publie } : a));
+    if (!e) {
+      setActualites((prev) => prev.map((a) => a.id === actu.id ? { ...a, publie: !a.publie } : a));
+      showToast({ type: 'success', message: actu.publie ? 'Actualité masquée' : 'Actualité publiée' });
+    } else {
+      showToast({ type: 'error', message: 'Erreur lors du changement de statut' });
+    }
   }
 
   async function toggleEpingle(actu) {
@@ -270,7 +280,12 @@ export default function BackOfficeActualites() {
   async function supprimer(id) {
     if (!window.confirm('Supprimer cette actualité ?')) return;
     const { error: e } = await supabase.from('actualites').delete().eq('id', id);
-    if (!e) setActualites((prev) => prev.filter((a) => a.id !== id));
+    if (!e) {
+      setActualites((prev) => prev.filter((a) => a.id !== id));
+      showToast({ type: 'success', message: 'Actualité supprimée' });
+    } else {
+      showToast({ type: 'error', message: 'Erreur lors de la suppression' });
+    }
   }
 
   function formatDate(str) {

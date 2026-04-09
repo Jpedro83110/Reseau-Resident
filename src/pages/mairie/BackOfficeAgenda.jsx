@@ -8,6 +8,7 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
 import { supabase } from '../../lib/supabase';
+import { useToast } from '../../components/ui/Toast';
 import MairieNav from './components/MairieNav';
 import usePageMeta from '../../hooks/usePageMeta';
 
@@ -26,6 +27,7 @@ const STATUTS = {
 
 // ── Modal formulaire ─────────────────────────────────────────
 function ModalEvenement({ evt, villeId, villeSlug, onClose, onSaved }) {
+  const { showToast } = useToast();
   const isEdition = !!evt;
   const [form, setForm] = useState({
     titre: evt?.titre ?? '',
@@ -140,9 +142,11 @@ function ModalEvenement({ evt, villeId, villeSlug, onClose, onSaved }) {
 
       onSaved();
       onClose();
+      showToast({ type: 'success', message: isEdition ? 'Événement modifié' : 'Événement créé' });
     } catch (err) {
       console.error('Erreur sauvegarde événement:', err);
       setErreur('Erreur lors de la sauvegarde.');
+      showToast({ type: 'error', message: 'Erreur lors de la sauvegarde de l\'événement' });
     } finally {
       setIsSaving(false);
     }
@@ -398,6 +402,7 @@ function VueCalendrier({ evenements }) {
 // ── Page principale ──────────────────────────────────────────
 export default function BackOfficeAgenda() {
   const { user } = useAuth();
+  const { showToast } = useToast();
   usePageMeta('Mairie \u2014 Agenda');
 
   const [ville, setVille] = useState(null);
@@ -440,7 +445,12 @@ export default function BackOfficeAgenda() {
   async function supprimer(id) {
     if (!window.confirm('Supprimer cet événement ?')) return;
     const { error: e } = await supabase.from('evenements').delete().eq('id', id);
-    if (!e) setEvenements((prev) => prev.filter((evt) => evt.id !== id));
+    if (!e) {
+      setEvenements((prev) => prev.filter((evt) => evt.id !== id));
+      showToast({ type: 'success', message: 'Événement supprimé' });
+    } else {
+      showToast({ type: 'error', message: 'Erreur lors de la suppression' });
+    }
   }
 
   function formatDate(str) {

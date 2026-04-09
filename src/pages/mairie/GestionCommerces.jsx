@@ -4,11 +4,13 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Store, CheckCircle2, XCircle, Search, ToggleLeft, ToggleRight, Eye, Pencil, Trash2, X, Save, Loader2, MapPin, Phone, Mail, Globe, Clock } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
 import { supabase } from '../../lib/supabase';
+import { useToast } from '../../components/ui/Toast';
 import MairieNav from './components/MairieNav';
 import usePageMeta from '../../hooks/usePageMeta';
 
 export default function GestionCommerces() {
   const { user } = useAuth();
+  const { showToast } = useToast();
   usePageMeta('Mairie — Commerces');
 
   const [ville, setVille] = useState(null);
@@ -55,8 +57,9 @@ export default function GestionCommerces() {
 
   async function toggleActif(id, actif) {
     const { error: err } = await supabase.from('commerces').update({ actif: !actif }).eq('id', id);
-    if (err) { console.error('Erreur toggle:', err); return; }
+    if (err) { console.error('Erreur toggle:', err); showToast({ type: 'error', message: 'Erreur lors du changement de statut' }); return; }
     setCommerces((prev) => prev.map((c) => (c.id === id ? { ...c, actif: !actif } : c)));
+    showToast({ type: 'success', message: actif ? 'Commerce désactivé' : 'Commerce activé' });
   }
 
   // ── Validation directe (sans passer par /api/admin-action) ──
@@ -111,10 +114,12 @@ export default function GestionCommerces() {
       // 5. Mettre à jour l'UI
       setDemandes((prev) => prev.filter((d) => d.id !== demande.id));
       setCommerces((prev) => [...prev, newCommerce]);
+      showToast({ type: 'success', message: `Commerce "${demande.nom_commerce}" validé avec succès` });
 
     } catch (err) {
       console.error('Erreur validation commerce:', err);
       setError('Erreur lors de la validation. Vérifiez que les tables et policies sont correctes.');
+      showToast({ type: 'error', message: 'Erreur lors de la validation du commerce' });
     } finally {
       setActionLoading(null);
     }
@@ -129,8 +134,10 @@ export default function GestionCommerces() {
       setDemandes((prev) => prev.filter((d) => d.id !== id));
       setShowRefusModal(null);
       setRefusMotif('');
+      showToast({ type: 'success', message: 'Demande refusée' });
     } catch (err) {
       console.error('Erreur refus:', err);
+      showToast({ type: 'error', message: 'Erreur lors du refus de la demande' });
     } finally {
       setActionLoading(null);
     }
@@ -177,6 +184,9 @@ export default function GestionCommerces() {
       setCommerces((prev) => prev.map((c) => c.id === selectedCommerce.id ? { ...c, ...editForm } : c));
       setSelectedCommerce(null);
       setEditMode(false);
+      showToast({ type: 'success', message: 'Commerce modifié avec succès' });
+    } else {
+      showToast({ type: 'error', message: 'Erreur lors de la modification du commerce' });
     }
   }
 
@@ -187,6 +197,9 @@ export default function GestionCommerces() {
       setCommerces((prev) => prev.filter((c) => c.id !== id));
       setShowDeleteConfirm(null);
       setSelectedCommerce(null);
+      showToast({ type: 'success', message: 'Commerce supprimé' });
+    } else {
+      showToast({ type: 'error', message: 'Erreur lors de la suppression du commerce' });
     }
   }
 

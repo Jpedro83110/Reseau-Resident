@@ -10,6 +10,7 @@ import {
 } from 'lucide-react';
 import { useAuthContext } from '../../contexts/AuthContext';
 import { supabase } from '../../lib/supabase';
+import { useToast } from '../../components/ui/Toast';
 import usePageMeta from '../../hooks/usePageMeta';
 
 const STATUTS = {
@@ -23,6 +24,7 @@ export default function DetailProjet() {
   const { id } = useParams();
   const { user } = useAuthContext();
   const navigate = useNavigate();
+  const { showToast } = useToast();
   usePageMeta('Détail du projet');
 
   const [projet, setProjet] = useState(null);
@@ -99,6 +101,9 @@ export default function DetailProjet() {
       .eq('id', id);
     if (!updateError) {
       setProjet((prev) => ({ ...prev, statut: 'cloture' }));
+      showToast({ type: 'success', message: 'Projet clôturé avec succès' });
+    } else {
+      showToast({ type: 'error', message: 'Erreur lors de la clôture du projet' });
     }
   }
 
@@ -131,8 +136,10 @@ export default function DetailProjet() {
       const { data: refreshed } = await supabase.from('projets').select('id, association_id, ville_id, titre, description, objectif_montant, montant_collecte, objectif_description, paliers, image_url, date_limite, statut, source, source_id, created_at, updated_at').eq('id', projet.id).maybeSingle();
       if (refreshed) setProjet(refreshed);
       setIsEditing(false);
+      showToast({ type: 'success', message: 'Projet modifié avec succès' });
     } catch (err) {
       console.error('Erreur sauvegarde projet:', err);
+      showToast({ type: 'error', message: 'Erreur lors de la sauvegarde du projet' });
     } finally {
       setIsSaving(false);
     }
@@ -143,9 +150,11 @@ export default function DetailProjet() {
       setIsDeleting(true);
       const { error: delErr } = await supabase.from('projets').delete().eq('id', projet.id);
       if (delErr) throw delErr;
+      showToast({ type: 'success', message: 'Projet supprimé' });
       navigate('/mon-association');
     } catch (err) {
       console.error('Erreur suppression projet:', err);
+      showToast({ type: 'error', message: 'Erreur lors de la suppression du projet' });
       setIsDeleting(false);
     }
   }

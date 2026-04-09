@@ -3,6 +3,7 @@ import { createRoot } from 'react-dom/client';
 import { BrowserRouter } from 'react-router-dom';
 import { AuthProvider } from './contexts/AuthContext';
 import ErrorBoundary from './components/ErrorBoundary';
+import { ToastProvider } from './components/ui/Toast';
 import { Sentry, sentryEnabled } from './lib/sentry';
 import { initAnalytics } from './lib/analytics';
 import './index.css';
@@ -15,7 +16,9 @@ const appTree = (
   <ErrorBoundary>
     <BrowserRouter>
       <AuthProvider>
-        <App />
+        <ToastProvider>
+          <App />
+        </ToastProvider>
       </AuthProvider>
     </BrowserRouter>
   </ErrorBoundary>

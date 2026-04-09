@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Target, Plus, X, Users, Zap, Pencil, Archive } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
 import { supabase } from '../../lib/supabase';
+import { useToast } from '../../components/ui/Toast';
 import MairieNav from './components/MairieNav';
 import usePageMeta from '../../hooks/usePageMeta';
 
@@ -26,6 +27,7 @@ const SUGGESTIONS = [
 
 export default function GestionDefis() {
   const { user } = useAuth();
+  const { showToast } = useToast();
   usePageMeta('Mairie — Défis citoyens');
 
   const [villeId, setVilleId] = useState(null);
@@ -78,6 +80,9 @@ export default function GestionDefis() {
       setDefis((prev) => [data, ...prev]);
       setShowForm(false);
       setForm({ titre: '', description: '', type: 'exploration', points_recompense: 20, objectif_description: '', objectif_nombre: 1, date_fin: '' });
+      showToast({ type: 'success', message: 'Défi créé avec succès' });
+    } else if (error) {
+      showToast({ type: 'error', message: 'Erreur lors de la création du défi' });
     }
   }
 
@@ -106,6 +111,9 @@ export default function GestionDefis() {
       setEditingId(null);
       setShowForm(false);
       setForm({ titre: '', description: '', type: 'exploration', points_recompense: 20, objectif_description: '', objectif_nombre: 1, date_fin: '' });
+      showToast({ type: 'success', message: 'Défi modifié avec succès' });
+    } else if (error) {
+      showToast({ type: 'error', message: 'Erreur lors de la modification du défi' });
     }
   }
 
@@ -113,6 +121,9 @@ export default function GestionDefis() {
     const { error } = await supabase.from('defis').update({ actif: false }).eq('id', id);
     if (!error) {
       setDefis((prev) => prev.map((d) => d.id === id ? { ...d, actif: false } : d));
+      showToast({ type: 'success', message: 'Défi archivé' });
+    } else {
+      showToast({ type: 'error', message: 'Erreur lors de l\'archivage du défi' });
     }
   }
 
